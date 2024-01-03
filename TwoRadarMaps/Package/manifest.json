@@ -1,7 +1,7 @@
 {
     "name": "TwoRadarMaps",
     "version_number": "1.0.0",
-    "website_url": "",
+    "website_url": "https://github.com/Zaggy1024/LC_TwoRadarMaps/",
     "description": "Monitor different players' radar at the main monitor and the terminal simultaneously.",
     "dependencies": [
         "BepInEx-BepInExPack-5.4.2100"
