@@ -83,6 +83,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>mkdir $(ProjectDir)Package\BepInEx\plugins
+copy /Y $(SolutionDir)README.md $(ProjectDir)Package
 copy /Y $(ProjectDir)$(OutDir)TwoRadarMaps.dll $(ProjectDir)Package\BepInEx\plugins</PostBuildEvent>
   </PropertyGroup>
 </Project>
