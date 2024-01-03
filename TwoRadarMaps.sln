@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34330.188
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwoRadarMaps", "TwoRadarMaps\TwoRadarMaps.csproj", "{58BE1122-F068-4465-95EE-B1F09DCD559F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{58BE1122-F068-4465-95EE-B1F09DCD559F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{58BE1122-F068-4465-95EE-B1F09DCD559F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{58BE1122-F068-4465-95EE-B1F09DCD559F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{58BE1122-F068-4465-95EE-B1F09DCD559F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {50DE0FBD-A1AF-4EDF-BDD8-09D1D7FF9D95}
+	EndGlobalSection
+EndGlobal
