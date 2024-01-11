@@ -4,4 +4,5 @@ TwoRadarMaps separates the radar map within the terminal from the radar map disp
 When combined with the [Touchscreen mod](https://thunderstore.io/c/lethal-company/p/TheDeadSnake/Touchscreen/), those two players will both be able to disable turrets/mines, open/close doors, etc. without interfering with each other.
 
 Additionally, as a side effect of confining the visibility of night vision lighting to the map radar cameras, the night vision will now function outside the facility:
+
 ![Radar map view of outside the facility at night](https://raw.githubusercontent.com/Zaggy1024/LC_TwoRadarMaps/main/TwoRadarMaps/Package/outside_night.png)
