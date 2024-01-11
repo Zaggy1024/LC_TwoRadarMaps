@@ -98,6 +98,8 @@ namespace TwoRadarMaps.Patches
             Plugin.terminalMapRenderer.SwitchScreenOn(false);
             Plugin.terminalMapRenderer.cam.enabled = false;
 
+            terminalScript.terminalUIScreen.gameObject.AddComponent<TerminalVisibilityTracker>();
+
             Plugin.UpdateRadarTargets();
         }
 
@@ -105,25 +107,16 @@ namespace TwoRadarMaps.Patches
         [HarmonyPatch("SetTerminalInUseLocalClient")]
         static void SetTerminalInUseLocalClientPostfix(Terminal __instance, bool __0)
         {
-            var in_use = __0;
+            bool isOn = __0;
 
             // Display the map overlay UI on the terminal map instead while the terminal is being accessed.
             // Ideally we would be able to display it on both, but that seems like it would require duplicating
             // the objects for the monitored player text as well as every interactable in the world.
-            if (in_use)
-            {
+            if (isOn)
                 StartOfRound.Instance.radarCanvas.worldCamera = Plugin.terminalMapRenderer.cam;
-                Plugin.terminalMapRenderer.cam.enabled = true;
-                Plugin.terminalMapRenderer.SwitchScreenOn(true);
-                Plugin.terminalMapRenderer.enabled = true;
-            }
             else
-            {
                 StartOfRound.Instance.radarCanvas.worldCamera = StartOfRound.Instance.mapScreen.cam;
-                Plugin.terminalMapRenderer.SwitchScreenOn(false);
-                Plugin.terminalMapRenderer.enabled = false;
-                Plugin.terminalMapRenderer.cam.enabled = false;
-            }
+
             Plugin.UpdateCurrentMonitoredPlayer();
         }
 
