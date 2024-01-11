@@ -8,8 +8,8 @@ namespace TwoRadarMaps.Patches
 {
     internal class Common
     {
-        static readonly FieldInfo f_StartOfRound_mapScreen = AccessTools.Field(typeof(StartOfRound), nameof(StartOfRound.mapScreen));
-        static readonly FieldInfo f_Plugin_terminalMapRenderer = AccessTools.Field(typeof(Plugin), nameof(Plugin.terminalMapRenderer));
+        static readonly FieldInfo f_StartOfRound_mapScreen = typeof(StartOfRound).GetField(nameof(StartOfRound.mapScreen));
+        static readonly FieldInfo f_Plugin_terminalMapRenderer = typeof(Plugin).GetField(nameof(Plugin.terminalMapRenderer));
 
         public static IEnumerable<CodeInstruction> TranspileReplaceMainWithTerminalMapRenderer(IEnumerable<CodeInstruction> instructions)
         {
