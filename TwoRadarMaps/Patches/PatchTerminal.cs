@@ -18,45 +18,52 @@ namespace TwoRadarMaps.Patches
             var viewMonitorNode = terminalScript.terminalNodes.allKeywords.First(keyword => keyword.word == "view")?.compatibleNouns.First(noun => noun.noun.word == "monitor")?.result;
 
             // Existing objects/components
-            const string basePath = "Systems/GameSystems/ItemSystems/";
-            const string mainMapCameraPath = basePath + "MapCamera";
-            var mainMapCamera = GameObject.Find(mainMapCameraPath);
+            var itemSystems = GameObject.Find("Systems/GameSystems/ItemSystems");
+            if (itemSystems == null)
+            {
+                Plugin.Instance.Logger.LogError($"Could not find the ItemSystems object.");
+                return;
+            }
+
+            var mainMapCamera = itemSystems.transform.Find("MapCamera")?.gameObject;
             if (mainMapCamera == null)
             {
-                Plugin.Instance.Logger.LogInfo($"Could not find the default map camera at path '{mainMapCameraPath}.");
+                Plugin.Instance.Logger.LogError($"Could not find the default map camera.");
                 return;
             }
-            if (StartOfRound.Instance?.mapScreen == null)
+
+            var mainMapRenderer = StartOfRound.Instance?.mapScreen;
+            if (mainMapRenderer == null)
             {
-                Plugin.Instance.Logger.LogInfo($"Could not get the default map camera renderer.");
+                Plugin.Instance.Logger.LogError("Default map camera renderer is null.");
                 return;
             }
-            var mainMapRenderer = StartOfRound.Instance.mapScreen;
 
             // New objects/components for terminal map rendering
-            var terminalMapCamera = UnityEngine.Object.Instantiate(mainMapCamera);
+            var terminalMapCameraObject = UnityEngine.Object.Instantiate(mainMapCamera);
+            var terminalMapCamera = terminalMapCameraObject?.GetComponent<Camera>();
             if (terminalMapCamera == null)
             {
                 Plugin.Instance.Logger.LogInfo("Failed to clone the default map camera.");
                 return;
             }
-            terminalMapCamera.name = "TerminalMapCamera";
+            terminalMapCameraObject.name = "TerminalMapCamera";
 
-            var newAnimator = terminalMapCamera.GetComponentInChildren<Animator>();
+            var newAnimator = terminalMapCameraObject.GetComponentInChildren<Animator>();
             if (newAnimator == null)
             {
                 Plugin.Instance.Logger.LogInfo($"Failed to find new map flash animation.");
                 return;
             }
 
-            var newLight = terminalMapCamera.GetComponentInChildren<Light>();
+            var newLight = terminalMapCameraObject.GetComponentInChildren<Light>();
             if (newLight == null)
             {
                 Plugin.Instance.Logger.LogInfo($"Failed to find new map night vision light.");
                 return;
             }
 
-            var terminalMesh = GameObject.Find("Environment/HangarShip/Terminal").GetComponentInChildren<MeshRenderer>();
+            var terminalMesh = GameObject.Find("Environment/HangarShip/Terminal")?.GetComponentInChildren<MeshRenderer>();
             if (terminalMesh == null)
             {
                 Plugin.Instance.Logger.LogInfo($"Failed to find terminal object mesh.");
@@ -68,8 +75,8 @@ namespace TwoRadarMaps.Patches
             var terminalMapRenderer = terminalObject.AddComponent<ManualCameraRenderer>();
             terminalMapRenderer.enabled = false;
 
-            terminalMapRenderer.cam = terminalMapCamera.GetComponent<Camera>();
-            terminalMapRenderer.mapCamera = terminalMapRenderer.cam;
+            terminalMapRenderer.cam = terminalMapCamera;
+            terminalMapRenderer.mapCamera = terminalMapCamera;
             terminalMapRenderer.cam.targetTexture = new RenderTexture(mainMapRenderer.cam.targetTexture);
 
             // The map renderer only enables the camera if the mesh is visible, so set the mesh to the terminal mesh.
