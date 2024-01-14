@@ -40,7 +40,7 @@ namespace TwoRadarMaps.Patches
             }
 
             // New objects/components for terminal map rendering
-            var terminalMapCameraObject = UnityEngine.Object.Instantiate(mainMapCamera);
+            var terminalMapCameraObject = Object.Instantiate(mainMapCamera, itemSystems.transform, false);
             var terminalMapCamera = terminalMapCameraObject?.GetComponent<Camera>();
             if (terminalMapCamera == null)
             {
