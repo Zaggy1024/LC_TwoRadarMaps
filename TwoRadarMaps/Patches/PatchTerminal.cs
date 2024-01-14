@@ -21,14 +21,14 @@ namespace TwoRadarMaps.Patches
             var itemSystems = GameObject.Find("Systems/GameSystems/ItemSystems");
             if (itemSystems == null)
             {
-                Plugin.Instance.Logger.LogError($"Could not find the ItemSystems object.");
+                Plugin.Instance.Logger.LogError("Could not find the ItemSystems object.");
                 return;
             }
 
             var mainMapCamera = itemSystems.transform.Find("MapCamera")?.gameObject;
             if (mainMapCamera == null)
             {
-                Plugin.Instance.Logger.LogError($"Could not find the default map camera.");
+                Plugin.Instance.Logger.LogError("Could not find the default map camera.");
                 return;
             }
 
@@ -44,7 +44,7 @@ namespace TwoRadarMaps.Patches
             var terminalMapCamera = terminalMapCameraObject?.GetComponent<Camera>();
             if (terminalMapCamera == null)
             {
-                Plugin.Instance.Logger.LogInfo("Failed to clone the default map camera.");
+                Plugin.Instance.Logger.LogError("Failed to clone the default map camera.");
                 return;
             }
             terminalMapCameraObject.name = "TerminalMapCamera";
@@ -52,21 +52,21 @@ namespace TwoRadarMaps.Patches
             var newAnimator = terminalMapCameraObject.GetComponentInChildren<Animator>();
             if (newAnimator == null)
             {
-                Plugin.Instance.Logger.LogInfo($"Failed to find new map flash animation.");
+                Plugin.Instance.Logger.LogError("Failed to find new map flash animation.");
                 return;
             }
 
             var newLight = terminalMapCameraObject.GetComponentInChildren<Light>();
             if (newLight == null)
             {
-                Plugin.Instance.Logger.LogInfo($"Failed to find new map night vision light.");
+                Plugin.Instance.Logger.LogError("Failed to find new map night vision light.");
                 return;
             }
 
             var terminalMesh = GameObject.Find("Environment/HangarShip/Terminal")?.GetComponentInChildren<MeshRenderer>();
             if (terminalMesh == null)
             {
-                Plugin.Instance.Logger.LogInfo($"Failed to find terminal object mesh.");
+                Plugin.Instance.Logger.LogError("Failed to find terminal object mesh.");
                 return;
             }
 
