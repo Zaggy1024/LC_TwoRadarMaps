@@ -1,4 +1,8 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
 
 using HarmonyLib;
 
@@ -7,40 +11,65 @@ namespace TwoRadarMaps.Patches
     [HarmonyPatch(typeof(ManualCameraRenderer))]
     internal class PatchManualCameraRenderer
     {
-        [HarmonyPostfix]
-        [HarmonyPatch("updateMapTarget")]
-        static IEnumerator updateTargetMapPostfix(IEnumerator __result)
+        static IEnumerable<CodeInstruction> InsertTerminalField(IEnumerable<CodeInstruction> instructions, ILGenerator generator, CodeInstruction loadRenderer, FieldInfo vanillaStartOfRoundField, FieldInfo pluginField)
         {
-            while (__result.MoveNext())
-                yield return __result.Current;
-            Plugin.UpdateCurrentMonitoredPlayer();
+            var instructionsList = instructions.ToList();
+
+            var searchIndex = 0;
+            while (true)
+            {
+                var getPlayerNameComponent = instructionsList.FindIndexOfSequence(searchIndex, new Predicate<CodeInstruction>[]
+                {
+                    insn => insn.Calls(Reflection.m_StartOfRound_Instance),
+                    insn => insn.LoadsField(vanillaStartOfRoundField),
+                });
+                if (getPlayerNameComponent == null)
+                    break;
+
+                var isNotTerminalMapLabel = generator.DefineLabel();
+                instructionsList[getPlayerNameComponent.End].labels.Add(isNotTerminalMapLabel);
+
+                var isTerminalMapLabel = generator.DefineLabel();
+                var injectBefore = new CodeInstruction[]
+                {
+                    new CodeInstruction(loadRenderer),
+                    new CodeInstruction(OpCodes.Ldsfld, Reflection.f_Plugin_terminalMapRenderer),
+                    new CodeInstruction(OpCodes.Beq_S, isTerminalMapLabel),
+                };
+                instructionsList.InsertRange(getPlayerNameComponent.Start, injectBefore);
+
+                var injectAfter = new CodeInstruction[]
+                {
+                    new CodeInstruction(OpCodes.Br_S, isNotTerminalMapLabel),
+                    new CodeInstruction(OpCodes.Ldsfld, pluginField).WithLabels(isTerminalMapLabel),
+                };
+                instructionsList.InsertRange(getPlayerNameComponent.End + injectBefore.Length, injectAfter);
+
+                searchIndex = getPlayerNameComponent.End + injectBefore.Length + injectAfter.Length;
+            }
+
+            return instructionsList;
         }
 
-        [HarmonyPostfix]
+        [HarmonyPatch("updateMapTarget", MethodType.Enumerator)]
+        [HarmonyTranspiler]
+        static IEnumerable<CodeInstruction> updateMapTargetTranspiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            return InsertTerminalField(instructions, generator, new CodeInstruction(OpCodes.Ldloc_1), Reflection.f_StartOfRound_mapScreenPlayerName, Reflection.f_Plugin_terminalMapScreenPlayerName);
+        }
+
         [HarmonyPatch("ChangeNameOfTargetTransform")]
+        [HarmonyPostfix]
         static void ChangeNameOfTargetTransformPostfix(ref ManualCameraRenderer __instance)
         {
             Plugin.UpdateRadarTargets();
         }
 
-        [HarmonyPostfix]
         [HarmonyPatch("MapCameraFocusOnPosition")]
-        static void MapCameraFocusOnPositionPostfix(ref ManualCameraRenderer __instance)
+        [HarmonyTranspiler]
+        static IEnumerable<CodeInstruction> MapCameraFocusOnPositionTranspiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
-            // This postfix will mirror the behavior of the function with regard to the
-            // the radar UI canvas's plane distance, as that will be set for both maps otherwise.
-            // Here we will take into account which one is actually visible at the moment.
-            if (!(GameNetworkManager.Instance.localPlayerController == null))
-            {
-                var map = StartOfRound.Instance.mapScreen;
-                if (StartOfRound.Instance.radarCanvas.worldCamera != StartOfRound.Instance.mapScreen.cam)
-                    map = Plugin.terminalMapRenderer;
-
-                if (map.targetedPlayer != null && map.targetedPlayer.isInHangarShipRoom)
-                    StartOfRound.Instance.radarCanvas.planeDistance = -0.93f;
-                else
-                    StartOfRound.Instance.radarCanvas.planeDistance = -2.4f;
-            }
+            return InsertTerminalField(instructions, generator, new CodeInstruction(OpCodes.Ldarg_0), Reflection.f_StartOfRound_radarCanvas, Reflection.f_Plugin_terminalMapScreenUICanvas);
         }
     }
 }

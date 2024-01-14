@@ -2,6 +2,7 @@
 using System.Linq;
 
 using HarmonyLib;
+using TMPro;
 using UnityEngine;
 
 namespace TwoRadarMaps.Patches
@@ -39,6 +40,13 @@ namespace TwoRadarMaps.Patches
                 return;
             }
 
+            var mainMapScreenUI = itemSystems.transform.Find("MapScreenUI")?.gameObject;
+            if (mainMapScreenUI == null)
+            {
+                Plugin.Instance.Logger.LogError("Could not find the map screen UI.");
+                return;
+            }
+
             // New objects/components for terminal map rendering
             var terminalMapCameraObject = Object.Instantiate(mainMapCamera, itemSystems.transform, false);
             var terminalMapCamera = terminalMapCameraObject?.GetComponent<Camera>();
@@ -48,6 +56,42 @@ namespace TwoRadarMaps.Patches
                 return;
             }
             terminalMapCameraObject.name = "TerminalMapCamera";
+
+            var terminalMapScreenUI = UnityEngine.Object.Instantiate(mainMapScreenUI, itemSystems.transform, false);
+            var terminalMapScreenUICanvas = terminalMapScreenUI?.GetComponent<Canvas>();
+            terminalMapScreenUICanvas.worldCamera = terminalMapCamera;
+            if (terminalMapScreenUICanvas == null)
+            {
+                Plugin.Instance.Logger.LogError("Failed to clone the default map's UI.");
+                return;
+            }
+            terminalMapScreenUI.name = "TerminalMapScreenUI";
+
+            var planetVideo = terminalMapScreenUI.transform.Find("PlanetVideoReel")?.gameObject;
+            var planetDescription = terminalMapScreenUI.transform.Find("PlanetDescription")?.gameObject;
+            if (planetVideo == null || planetDescription == null)
+            {
+                Plugin.Instance.Logger.LogError("Failed to delete duplicated planet description.");
+                return;
+            }
+            Object.Destroy(planetVideo);
+            Object.Destroy(planetDescription);
+
+            var terminalMapShipArrowUI = terminalMapScreenUI.transform.Find("ArrowUI")?.gameObject;
+            var terminalMapShipArrowPointer = terminalMapShipArrowUI.transform.Find("ArrowContainer");
+            if (terminalMapShipArrowUI == null || terminalMapShipArrowPointer == null)
+            {
+                Plugin.Instance.Logger.LogError("Failed to get cloned ship arrow pointer.");
+                return;
+            }
+
+            var terminalMapPlayerName = terminalMapScreenUI.transform.Find("PlayerBeingMonitored")?.GetComponent<TextMeshProUGUI>();
+            terminalMapPlayerName.enabled = true;
+            if (terminalMapShipArrowUI == null || terminalMapShipArrowPointer == null)
+            {
+                Plugin.Instance.Logger.LogError("Failed to get cloned 'MONITORING:' text UI.");
+                return;
+            }
 
             var newAnimator = terminalMapCameraObject.GetComponentInChildren<Animator>();
             if (newAnimator == null)
@@ -70,8 +114,6 @@ namespace TwoRadarMaps.Patches
                 return;
             }
 
-            var junk = new GameObject("TerminalMapJunk");
-
             var terminalMapRenderer = terminalObject.AddComponent<ManualCameraRenderer>();
             terminalMapRenderer.enabled = false;
 
@@ -88,10 +130,8 @@ namespace TwoRadarMaps.Patches
             terminalMapRenderer.offScreenMat = terminalMapRenderer.onScreenMat;
 
             // Our terminal map will enable and disable the arrow UI when it is active.
-            terminalMapRenderer.shipArrowUI = mainMapRenderer.shipArrowUI;
-            terminalMapRenderer.shipArrowPointer = junk.transform;
-
-            terminalMapRenderer.mapCameraStationaryUI = mainMapRenderer.mapCameraStationaryUI;
+            terminalMapRenderer.shipArrowUI = terminalMapShipArrowUI;
+            terminalMapRenderer.shipArrowPointer = terminalMapShipArrowPointer;
 
             terminalMapRenderer.mapCameraAnimator = newAnimator;
             terminalMapRenderer.mapCameraLight = newLight;
@@ -100,6 +140,8 @@ namespace TwoRadarMaps.Patches
 
             Plugin.Instance.Logger.LogInfo($"Terminal node '{viewMonitorNode.name}' will now use a separate texture.");
             Plugin.terminalMapRenderer = terminalMapRenderer;
+            Plugin.terminalMapScreenUICanvas = terminalMapScreenUICanvas;
+            Plugin.terminalMapScreenPlayerName = terminalMapPlayerName;
 
             // Disable the camera until the player interacts with the terminal.
             Plugin.terminalMapRenderer.SwitchScreenOn(false);
@@ -108,23 +150,6 @@ namespace TwoRadarMaps.Patches
             terminalScript.terminalUIScreen.gameObject.AddComponent<TerminalVisibilityTracker>();
 
             Plugin.UpdateRadarTargets();
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch("SetTerminalInUseLocalClient")]
-        static void SetTerminalInUseLocalClientPostfix(Terminal __instance, bool __0)
-        {
-            bool isOn = __0;
-
-            // Display the map overlay UI on the terminal map instead while the terminal is being accessed.
-            // Ideally we would be able to display it on both, but that seems like it would require duplicating
-            // the objects for the monitored player text as well as every interactable in the world.
-            if (isOn)
-                StartOfRound.Instance.radarCanvas.worldCamera = Plugin.terminalMapRenderer.cam;
-            else
-                StartOfRound.Instance.radarCanvas.worldCamera = StartOfRound.Instance.mapScreen.cam;
-
-            Plugin.UpdateCurrentMonitoredPlayer();
         }
 
         [HarmonyTranspiler]

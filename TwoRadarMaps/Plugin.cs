@@ -24,6 +24,7 @@ namespace TwoRadarMaps
 
         public static ManualCameraRenderer terminalMapRenderer;
         public static TMPro.TextMeshProUGUI terminalMapScreenPlayerName;
+        public static Canvas terminalMapScreenUICanvas;
 
         public void Awake()
         {
@@ -62,20 +63,10 @@ namespace TwoRadarMaps
             currentMapRenderer.mapCameraLight.enabled = true;
         }
 
-        public static void UpdateCurrentMonitoredPlayer()
-        {
-            var map = StartOfRound.Instance.mapScreen;
-            // If we are rendering the UI to the terminal map, get the target from our separate map renderer.
-            if (StartOfRound.Instance.radarCanvas.worldCamera != StartOfRound.Instance.mapScreen.cam)
-                map = terminalMapRenderer;
-            StartOfRound.Instance.mapScreenPlayerName.text = "MONITORING: " + map.radarTargets[map.targetTransformIndex].name;
-        }
-
         public static void UpdateRadarTargets()
         {
             var mainMapRenderer = StartOfRound.Instance.mapScreen;
             terminalMapRenderer.radarTargets = mainMapRenderer.radarTargets;
-            UpdateCurrentMonitoredPlayer();
 
             // Bug fix for vanilla: Update both map targets to their current target to force checking
             // for the validity of the selected player when the lobby is not full.
