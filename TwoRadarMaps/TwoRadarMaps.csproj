@@ -76,6 +76,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Commands.cs" />
     <Compile Include="Patches\Common.cs" />
     <Compile Include="Patches\PatchManualCameraRenderer.cs" />
     <Compile Include="Patches\PatchPlayerControllerB.cs" />

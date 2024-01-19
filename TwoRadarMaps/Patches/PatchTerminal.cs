@@ -10,6 +10,13 @@ namespace TwoRadarMaps.Patches
     [HarmonyPatch(typeof(Terminal))]
     internal class PatchTerminal
     {
+        [HarmonyPostfix]
+        [HarmonyPatch("Awake")]
+        public static void AwakePostfix(Terminal __instance)
+        {
+            Commands.Initialize(__instance.terminalNodes);
+        }
+
         [HarmonyPrefix]
         [HarmonyPatch("Start")]
         static void StartPrefix(ref Terminal __instance)
@@ -150,6 +157,7 @@ namespace TwoRadarMaps.Patches
             terminalScript.terminalUIScreen.gameObject.AddComponent<TerminalVisibilityTracker>();
 
             Plugin.UpdateRadarTargets();
+            Plugin.UpdateZoomFactors();
         }
 
         [HarmonyTranspiler]
@@ -164,6 +172,13 @@ namespace TwoRadarMaps.Patches
         static IEnumerable<CodeInstruction> TranspileParsePlayerSentence(IEnumerable<CodeInstruction> instructions)
         {
             return Common.TranspileReplaceMainWithTerminalMapRenderer(instructions);
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(nameof(Terminal.RunTerminalEvents))]
+        static bool RunTerminalEventsPrefix(TerminalNode __0)
+        {
+            return Commands.ProcessNode(__0);
         }
     }
 }
