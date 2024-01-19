@@ -6,3 +6,13 @@ When combined with the [Touchscreen mod](https://thunderstore.io/c/lethal-compan
 Additionally, as a side effect of confining the visibility of night vision lighting to the map radar cameras, the night vision will now function outside the facility:
 
 ![Radar map view of outside the facility at night](https://raw.githubusercontent.com/Zaggy1024/LC_TwoRadarMaps/main/TwoRadarMaps/Package/outside_night.png)
+
+## Features:
+
+### Radar zoom
+Disabled by default, this feature allows the terminal to select from a list of customizable map view sizes. To enable it, open the config and set the `Enabled` option under `[Zoom]` to `true`.
+
+Once enabled, the following commands are available in the terminal:
+- `zoom` will cycle through the configured zoom levels.
+- `zoom in` and `zoom out` will stop at the minimum or maximum zoom levels.
+- `reset zoom` will set the zoom level back to the configured default.
