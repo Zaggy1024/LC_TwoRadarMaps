@@ -7,6 +7,14 @@ namespace TwoRadarMaps.Patches
     internal class PatchPlayerControllerB
     {
         [HarmonyPostfix]
+        [HarmonyPatch(nameof(PlayerControllerB.ConnectClientToPlayerObject))]
+        static void ConnectClientToPlayerObjectPostfix()
+        {
+            Plugin.UpdateRadarTargets();
+            Plugin.UpdateZoomFactors();
+        }
+
+        [HarmonyPostfix]
         [HarmonyPatch("SendNewPlayerValuesClientRpc")]
         static void SendNewPlayerValuesClientRpcPostfix(ref PlayerControllerB __instance)
         {

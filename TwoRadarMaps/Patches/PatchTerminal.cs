@@ -155,9 +155,6 @@ namespace TwoRadarMaps.Patches
             Plugin.terminalMapRenderer.cam.enabled = false;
 
             terminalScript.terminalUIScreen.gameObject.AddComponent<TerminalVisibilityTracker>();
-
-            Plugin.UpdateRadarTargets();
-            Plugin.UpdateZoomFactors();
         }
 
         [HarmonyTranspiler]
