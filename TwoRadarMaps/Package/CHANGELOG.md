@@ -1,3 +1,6 @@
+## Version 1.1.1
+- Fixed an error that would occur when loading into a game with GeneralImprovements installed.
+
 ## Version 1.1.0
 - Implemented an opt-in feature feature which allows the terminal to select from a list of customizable zoom levels.
 
