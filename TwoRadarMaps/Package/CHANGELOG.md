@@ -1,3 +1,6 @@
+## Version 1.1.2
+- Fixed zoom level parsing for locales that use `,` as the decimal separator.
+
 ## Version 1.1.1
 - Fixed an error that would occur when loading into a game with GeneralImprovements installed.
 
