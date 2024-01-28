@@ -9,6 +9,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 using TwoRadarMaps.Patches;
+using System.Globalization;
 
 namespace TwoRadarMaps
 {
@@ -96,7 +97,10 @@ namespace TwoRadarMaps
         {
             try
             {
-                terminalMapZoomLevelOptions = factors.Split(',').Select(s => float.Parse(s.Trim())).ToArray();
+                terminalMapZoomLevelOptions = factors
+                    .Split(new char[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => float.Parse(s.Trim(), CultureInfo.InvariantCulture))
+                    .ToArray();
             }
             catch (Exception e)
             {
