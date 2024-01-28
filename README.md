@@ -16,3 +16,12 @@ Once enabled, the following commands are available in the terminal:
 - `zoom` will cycle through the configured zoom levels.
 - `zoom in` and `zoom out` will stop at the minimum or maximum zoom levels.
 - `reset zoom` will set the zoom level back to the configured default.
+
+## Developer information
+To the terminal mod developer reading this, if you have any commands that you would like to interact with the target being viewed by the map in this mod, you can check for the following:
+
+```cs
+UnityEngine.Object.FindObjectOfType<Terminal>().GetComponent<ManualCameraRenderer>();
+```
+
+If that component is found, then TwoRadarMaps is present, and the renderer can be used in place of the `StartOfRound.Instance.mapScreen` field for any commands interacting with it.
