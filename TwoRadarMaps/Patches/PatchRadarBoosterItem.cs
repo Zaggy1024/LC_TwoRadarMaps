@@ -6,14 +6,14 @@ namespace TwoRadarMaps.Patches
     internal class PatchRadarBoosterItem
     {
         [HarmonyPostfix]
-        [HarmonyPatch("AddBoosterToRadar")]
+        [HarmonyPatch(nameof(RadarBoosterItem.AddBoosterToRadar))]
         static void AddBoosterToRadarPostfix(ref RadarBoosterItem __instance)
         {
             Plugin.UpdateRadarTargets();
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch("RemoveBoosterFromRadar")]
+        [HarmonyPatch(nameof(RadarBoosterItem.RemoveBoosterFromRadar))]
         static void RemoveBoosterFromRadarPostfix(ref RadarBoosterItem __instance)
         {
             Plugin.UpdateRadarTargets();

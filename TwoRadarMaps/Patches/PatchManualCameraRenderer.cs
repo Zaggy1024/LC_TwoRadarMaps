@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -51,21 +51,21 @@ namespace TwoRadarMaps.Patches
             return instructionsList;
         }
 
-        [HarmonyPatch("updateMapTarget", MethodType.Enumerator)]
+        [HarmonyPatch(nameof(ManualCameraRenderer.updateMapTarget), MethodType.Enumerator)]
         [HarmonyTranspiler]
         static IEnumerable<CodeInstruction> updateMapTargetTranspiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
             return InsertTerminalField(instructions, generator, new CodeInstruction(OpCodes.Ldloc_1), Reflection.f_StartOfRound_mapScreenPlayerName, Reflection.f_Plugin_terminalMapScreenPlayerName);
         }
 
-        [HarmonyPatch("ChangeNameOfTargetTransform")]
+        [HarmonyPatch(nameof(ManualCameraRenderer.ChangeNameOfTargetTransform))]
         [HarmonyPostfix]
         static void ChangeNameOfTargetTransformPostfix(ref ManualCameraRenderer __instance)
         {
             Plugin.UpdateRadarTargets();
         }
 
-        [HarmonyPatch("MapCameraFocusOnPosition")]
+        [HarmonyPatch(nameof(ManualCameraRenderer.MapCameraFocusOnPosition))]
         [HarmonyTranspiler]
         static IEnumerable<CodeInstruction> MapCameraFocusOnPositionTranspiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {

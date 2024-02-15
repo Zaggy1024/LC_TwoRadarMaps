@@ -11,14 +11,14 @@ namespace TwoRadarMaps.Patches
     internal class PatchTerminal
     {
         [HarmonyPostfix]
-        [HarmonyPatch("Awake")]
+        [HarmonyPatch(nameof(Terminal.Awake))]
         public static void AwakePostfix(Terminal __instance)
         {
             Commands.Initialize(__instance.terminalNodes);
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch("Start")]
+        [HarmonyPatch(nameof(Terminal.Start))]
         static void StartPrefix(ref Terminal __instance)
         {
             var terminalScript = __instance;
@@ -158,14 +158,14 @@ namespace TwoRadarMaps.Patches
         }
 
         [HarmonyTranspiler]
-        [HarmonyPatch("RunTerminalEvents")]
+        [HarmonyPatch(nameof(Terminal.RunTerminalEvents))]
         static IEnumerable<CodeInstruction> TranspileRunTerminalEvents(IEnumerable<CodeInstruction> instructions)
         {
             return Common.TranspileReplaceMainWithTerminalMapRenderer(instructions);
         }
 
         [HarmonyTranspiler]
-        [HarmonyPatch("ParsePlayerSentence")]
+        [HarmonyPatch(nameof(Terminal.ParsePlayerSentence))]
         static IEnumerable<CodeInstruction> TranspileParsePlayerSentence(IEnumerable<CodeInstruction> instructions)
         {
             return Common.TranspileReplaceMainWithTerminalMapRenderer(instructions);
