@@ -7,16 +7,12 @@ using HarmonyLib;
 
 namespace TwoRadarMaps.Patches
 {
-    public class SequenceMatch
+    public class SequenceMatch(int start, int end)
     {
-        public int Start;
-        public int End;
+        public int Start = start;
+        public int End = end;
 
-        public SequenceMatch(int start, int end)
-        {
-            Start = start;
-            End = end;
-        }
+        public int Size { get => End - Start; }
     }
 
     public static class Common
