@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Linq;
+using System.Globalization;
 
 using BepInEx;
 using BepInEx.Configuration;
@@ -9,7 +10,6 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 using TwoRadarMaps.Patches;
-using System.Globalization;
 
 namespace TwoRadarMaps
 {
