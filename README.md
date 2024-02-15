@@ -17,6 +17,11 @@ Once enabled, the following commands are available in the terminal:
 - `zoom in` and `zoom out` will stop at the minimum or maximum zoom levels.
 - `reset zoom` will set the zoom level back to the configured default.
 
+## Compatibility:
+Mods that can activate the teleporter to bring people back from the facility will not target the correct player unless they explicitly implement compatibility for TwoRadarMaps.
+
+[OpenBodyCams](https://thunderstore.io/c/lethal-company/p/Zaggy1024/OpenBodyCams/)'s `view bodycam` command is supported and will display the body cam of the player being targeted by the terminal's map.
+
 ## Developer information
 To the terminal mod developer reading this, if you have any commands that you would like to interact with the target being viewed by the map in this mod, you can check for the following:
 

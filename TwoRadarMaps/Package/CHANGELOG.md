@@ -1,3 +1,7 @@
+## Version 1.2.0
+- Added a compatibility mode for [OpenBodyCams](https://thunderstore.io/c/lethal-company/p/Zaggy1024/OpenBodyCams/) to display a separate body cam when using its `view bodycam` command.
+- Added an option to select the texture filtering used on the map. By default, nearest-neighbor (`Point`) filtering will be used.
+
 ## Version 1.1.2
 - Fixed zoom level parsing for locales that use `,` as the decimal separator.
 
