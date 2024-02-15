@@ -129,7 +129,7 @@ namespace TwoRadarMaps.Patches
             terminalMapRenderer.cam.targetTexture = new RenderTexture(mainMapRenderer.cam.targetTexture)
             {
                 name = "TerminalMapTexture",
-                filterMode = FilterMode.Point,
+                filterMode = Plugin.TextureFiltering.Value,
             };
 
             // The map renderer only enables the camera if the mesh is visible, so set the mesh to the terminal mesh.

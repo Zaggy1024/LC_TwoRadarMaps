@@ -67,8 +67,20 @@ namespace TwoRadarMaps.Compatibility
             TerminalCommands.PiPImage.GetComponent<TerminalBodyCamVisibilityTracker>().BodyCamToActivate = terminalBodyCam;
         }
 
+        public static void UpdateBodyCamTexture()
+        {
+            UpdateBodyCamTextureInternal();
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void UpdateBodyCamTextureInternal()
+        {
+            SetBodyCamTexture(((BodyCamComponent)TerminalBodyCam).GetCamera().targetTexture);
+        }
+
         private static void SetBodyCamTexture(RenderTexture texture)
         {
+            texture.filterMode = Plugin.TextureFiltering.Value;
             TerminalCommands.PiPImage.texture = texture;
         }
 

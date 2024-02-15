@@ -30,6 +30,7 @@ namespace TwoRadarMaps
         public static ConfigEntry<bool> EnableZoom;
         public static ConfigEntry<string> ZoomLevels;
         public static ConfigEntry<int> DefaultZoomLevel;
+        public static ConfigEntry<FilterMode> TextureFiltering;
 
         const string DEFAULT_ZOOM_LEVELS = "19.7, 29.55, 39.4";
 
@@ -43,6 +44,16 @@ namespace TwoRadarMaps
         public void Awake()
         {
             Instance = this;
+
+            TextureFiltering = Config.Bind("Rendering", "TextureFiltering", FilterMode.Point,
+                "The filtering mode to apply to the map (and the body cam if present).\n\n" +
+                "Point will result in sharp edges on pixels.\n" +
+                "Bilinear and Trilinear will result in smooth transitions between pixels.");
+            TextureFiltering.SettingChanged += (_, _) =>
+            {
+                terminalMapRenderer.cam.targetTexture.filterMode = TextureFiltering.Value;
+                OpenBodyCamsCompatibility.UpdateBodyCamTexture();
+            };
 
             EnableZoom = Config.Bind("Zoom", "Enabled", false, "Enable 'zoom in' and 'zoom out' commands in the terminal to zoom in and out of the terminal radar map.");
             ZoomLevels = Config.Bind("Zoom", "Sizes", DEFAULT_ZOOM_LEVELS,
