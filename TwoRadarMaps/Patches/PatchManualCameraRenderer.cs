@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -18,16 +18,16 @@ namespace TwoRadarMaps.Patches
             var searchIndex = 0;
             while (true)
             {
-                var getPlayerNameComponent = instructionsList.FindIndexOfSequence(searchIndex, new Predicate<CodeInstruction>[]
+                var loadVanillaField = instructionsList.FindIndexOfSequence(searchIndex, new Predicate<CodeInstruction>[]
                 {
                     insn => insn.Calls(Reflection.m_StartOfRound_Instance),
                     insn => insn.LoadsField(vanillaStartOfRoundField),
                 });
-                if (getPlayerNameComponent == null)
+                if (loadVanillaField == null)
                     break;
 
                 var isNotTerminalMapLabel = generator.DefineLabel();
-                instructionsList[getPlayerNameComponent.End].labels.Add(isNotTerminalMapLabel);
+                instructionsList[loadVanillaField.End].labels.Add(isNotTerminalMapLabel);
 
                 var isTerminalMapLabel = generator.DefineLabel();
                 var injectBefore = new CodeInstruction[]
@@ -36,16 +36,16 @@ namespace TwoRadarMaps.Patches
                     new CodeInstruction(OpCodes.Ldsfld, Reflection.f_Plugin_terminalMapRenderer),
                     new CodeInstruction(OpCodes.Beq_S, isTerminalMapLabel),
                 };
-                instructionsList.InsertRange(getPlayerNameComponent.Start, injectBefore);
+                instructionsList.InsertRange(loadVanillaField.Start, injectBefore);
 
                 var injectAfter = new CodeInstruction[]
                 {
                     new CodeInstruction(OpCodes.Br_S, isNotTerminalMapLabel),
                     new CodeInstruction(OpCodes.Ldsfld, pluginField).WithLabels(isTerminalMapLabel),
                 };
-                instructionsList.InsertRange(getPlayerNameComponent.End + injectBefore.Length, injectAfter);
+                instructionsList.InsertRange(loadVanillaField.End + injectBefore.Length, injectAfter);
 
-                searchIndex = getPlayerNameComponent.End + injectBefore.Length + injectAfter.Length;
+                searchIndex = loadVanillaField.End + injectBefore.Length + injectAfter.Length;
             }
 
             return instructionsList;
