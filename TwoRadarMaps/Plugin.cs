@@ -31,6 +31,7 @@ namespace TwoRadarMaps
 
         const string DEFAULT_ZOOM_LEVELS = "19.7, 29.55, 39.4";
 
+        internal static Terminal Terminal;
         public static ManualCameraRenderer terminalMapRenderer;
         public static TMPro.TextMeshProUGUI terminalMapScreenPlayerName;
         public static Canvas terminalMapScreenUICanvas;

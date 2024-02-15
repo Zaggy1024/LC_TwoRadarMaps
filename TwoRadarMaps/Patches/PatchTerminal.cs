@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 
 using HarmonyLib;
@@ -21,9 +21,9 @@ namespace TwoRadarMaps.Patches
         [HarmonyPatch(nameof(Terminal.Start))]
         static void StartPrefix(ref Terminal __instance)
         {
-            var terminalScript = __instance;
-            var terminalObject = terminalScript.gameObject;
-            var viewMonitorNode = terminalScript.terminalNodes.allKeywords.First(keyword => keyword.word == "view")?.compatibleNouns.First(noun => noun.noun.word == "monitor")?.result;
+            Plugin.Terminal = __instance;
+            var terminalObject = Plugin.Terminal.gameObject;
+            var viewMonitorNode = Plugin.Terminal.terminalNodes.allKeywords.First(keyword => keyword.word == "view")?.compatibleNouns.First(noun => noun.noun.word == "monitor")?.result;
 
             // Existing objects/components
             var itemSystems = GameObject.Find("Systems/GameSystems/ItemSystems");
@@ -154,7 +154,7 @@ namespace TwoRadarMaps.Patches
             Plugin.terminalMapRenderer.SwitchScreenOn(false);
             Plugin.terminalMapRenderer.cam.enabled = false;
 
-            terminalScript.terminalUIScreen.gameObject.AddComponent<TerminalVisibilityTracker>();
+            Plugin.Terminal.terminalUIScreen.gameObject.AddComponent<TerminalVisibilityTracker>();
         }
 
         [HarmonyTranspiler]
