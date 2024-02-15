@@ -62,33 +62,33 @@ namespace TwoRadarMaps
                 }
                 TerminalKeyword inKeyword = GetOrCreateKeyword("In", false);
                 TerminalKeyword outKeyword = GetOrCreateKeyword("Out", false);
-                var zoomVerbKeyword = GetOrCreateKeyword("Zoom", true, new CompatibleNoun[]
-                {
-                    new CompatibleNoun()
-                    {
-                        noun = inKeyword,
-                        result = ZoomInNode,
-                    },
-                    new CompatibleNoun()
-                    {
-                        noun = outKeyword,
-                        result = ZoomOutNode,
-                    },
-                });
+                var zoomVerbKeyword = GetOrCreateKeyword("Zoom", true,
+                    [
+                        new CompatibleNoun()
+                        {
+                            noun = inKeyword,
+                            result = ZoomInNode,
+                        },
+                        new CompatibleNoun()
+                        {
+                            noun = outKeyword,
+                            result = ZoomOutNode,
+                        },
+                    ]);
                 zoomVerbKeyword.specialKeywordResult = CycleZoomNode;
 
                 TerminalKeyword zoomNounKeyword = GetOrCreateKeyword("Zoom", false);
-                var resetVerbKeyword = GetOrCreateKeyword("Reset", true, new CompatibleNoun[]
-                {
-                    new CompatibleNoun()
-                    {
-                        noun = zoomNounKeyword,
-                        result = ResetZoomNode,
-                    },
-                });
+                var resetVerbKeyword = GetOrCreateKeyword("Reset", true,
+                    [
+                        new CompatibleNoun()
+                        {
+                            noun = zoomNounKeyword,
+                            result = ResetZoomNode,
+                        },
+                    ]);
             }
             
-            nodes.allKeywords = nodes.allKeywords.Concat(keywordsToAppend).ToArray();
+            nodes.allKeywords = [.. nodes.allKeywords, .. keywordsToAppend];
         }
 
         public static bool ProcessNode(TerminalNode node)
