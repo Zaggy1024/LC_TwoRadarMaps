@@ -126,7 +126,11 @@ namespace TwoRadarMaps.Patches
 
             terminalMapRenderer.cam = terminalMapCamera;
             terminalMapRenderer.mapCamera = terminalMapCamera;
-            terminalMapRenderer.cam.targetTexture = new RenderTexture(mainMapRenderer.cam.targetTexture);
+            terminalMapRenderer.cam.targetTexture = new RenderTexture(mainMapRenderer.cam.targetTexture)
+            {
+                name = "TerminalMapTexture",
+                filterMode = FilterMode.Point,
+            };
 
             // The map renderer only enables the camera if the mesh is visible, so set the mesh to the terminal mesh.
             // Calling SwitchScreenOn swaps the specified material on 'mesh' between on and off screen materials,
