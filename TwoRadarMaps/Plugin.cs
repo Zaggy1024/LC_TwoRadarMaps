@@ -45,7 +45,11 @@ namespace TwoRadarMaps
             Instance = this;
 
             EnableZoom = Config.Bind("Zoom", "Enabled", false, "Enable 'zoom in' and 'zoom out' commands in the terminal to zoom in and out of the terminal radar map.");
-            ZoomLevels = Config.Bind("Zoom", "Sizes", DEFAULT_ZOOM_LEVELS, "The orthographic sizes to use for each zoom level. A list of comma-separated numbers. Lower values indicate a smaller field of view. 100% zoom is 19.7.");
+            ZoomLevels = Config.Bind("Zoom", "Sizes", DEFAULT_ZOOM_LEVELS,
+                "The orthographic sizes to use for each zoom level.\n" +
+                "A list of comma-separated numbers.\n" +
+                "Lower values indicate a smaller field of view.\n" +
+                "100% zoom is 19.7.");
             ZoomLevels.SettingChanged += (s, e) => UpdateZoomFactors();
             DefaultZoomLevel = Config.Bind("Zoom", "DefaultLevel", 0, "The zoom factor to select by default. The first zoom level is 0.");
 
