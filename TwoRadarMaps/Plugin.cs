@@ -10,10 +10,12 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 using TwoRadarMaps.Patches;
+using TwoRadarMaps.Compatibility;
 
 namespace TwoRadarMaps
 {
     [BepInPlugin(MOD_UNIQUE_NAME, MOD_NAME, MOD_VERSION)]
+    [BepInDependency(OpenBodyCamsCompatibility.MOD_ID)]
     public class Plugin : BaseUnityPlugin
     {
         private const string MOD_NAME = "TwoRadarMaps";
@@ -55,6 +57,8 @@ namespace TwoRadarMaps
             // Enable each map's night vision light only when rendering that map camera.
             // This allows night vision to work outside the facility.
             RenderPipelineManager.beginCameraRendering += BeforeCameraRendering;
+
+            OpenBodyCamsCompatibility.Initialize();
         }
 
         public static void BeforeCameraRendering(ScriptableRenderContext context, Camera camera)

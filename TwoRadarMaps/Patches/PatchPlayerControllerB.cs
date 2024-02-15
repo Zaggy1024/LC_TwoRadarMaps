@@ -1,17 +1,22 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
 
+using TwoRadarMaps.Compatibility;
+
 namespace TwoRadarMaps.Patches
 {
     [HarmonyPatch(typeof(PlayerControllerB))]
     internal class PatchPlayerControllerB
     {
-        [HarmonyPostfix]
+        [HarmonyFinalizer]
         [HarmonyPatch(nameof(PlayerControllerB.ConnectClientToPlayerObject))]
+        [HarmonyAfter(OpenBodyCamsCompatibility.MOD_ID)]
         static void ConnectClientToPlayerObjectPostfix()
         {
             Plugin.UpdateRadarTargets();
             Plugin.UpdateZoomFactors();
+
+            OpenBodyCamsCompatibility.InitializeAtStartOfGame();
         }
 
         [HarmonyPostfix]

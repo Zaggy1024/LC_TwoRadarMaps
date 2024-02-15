@@ -1,0 +1,80 @@
+﻿using System.Runtime.CompilerServices;
+
+using UnityEngine;
+
+using OpenBodyCams;
+using BepInEx.Bootstrap;
+using OpenBodyCams.API;
+
+namespace TwoRadarMaps.Compatibility
+{
+    internal static class OpenBodyCamsCompatibility
+    {
+        internal const string MOD_ID = "Zaggy1024.OpenBodyCams";
+
+        public static MonoBehaviour TerminalBodyCam;
+
+        private static bool ShouldUseCompatibilityMode()
+        {
+            if (!Chainloader.PluginInfos.ContainsKey(MOD_ID))
+                return false;
+            // The "view bodycam" command was introduced in OpenBodyCams v1.2.0.
+            if (Chainloader.PluginInfos[MOD_ID].Metadata.Version < new System.Version(1, 2, 0))
+                return false;
+            return true;
+        }
+
+        internal static void Initialize()
+        {
+            if (ShouldUseCompatibilityMode())
+                InitializeInternal();
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void InitializeInternal()
+        {
+            // Reinitialize the bodycam if 
+            OpenBodyCams.Plugin.TerminalPiPBodyCamEnabled.SettingChanged += (_, _) => InitializeAtStartOfGameInternal();
+            OpenBodyCams.Plugin.TerminalPiPPosition.SettingChanged += (_, _) => InitializeAtStartOfGameInternal();
+            OpenBodyCams.Plugin.TerminalPiPWidth.SettingChanged += (_, _) => InitializeAtStartOfGameInternal();
+        }
+
+        internal static void InitializeAtStartOfGame()
+        {
+            if (ShouldUseCompatibilityMode())
+                InitializeAtStartOfGameInternal();
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void InitializeAtStartOfGameInternal()
+        {
+            Object.Destroy(TerminalBodyCam);
+            TerminalBodyCam = null;
+
+            if (TerminalCommands.PiPImage == null)
+                return;
+
+            var terminalBodyCam = BodyCam.CreateBodyCam(Plugin.Terminal.gameObject, null, Plugin.terminalMapRenderer);
+            TerminalBodyCam = terminalBodyCam;
+
+            ShipObjects.MainBodyCam.OnRenderTextureCreated -= TerminalCommands.SetRenderTexture;
+            terminalBodyCam.OnRenderTextureCreated += SetBodyCamTexture;
+            SetBodyCamTexture(terminalBodyCam.GetCamera().targetTexture);
+
+            ShipObjects.MainBodyCam.OnBlankedSet -= TerminalCommands.SetBodyCamBlanked;
+            terminalBodyCam.OnBlankedSet += SetBodyCamBlanked;
+
+            TerminalCommands.PiPImage.GetComponent<TerminalBodyCamVisibilityTracker>().BodyCamToActivate = terminalBodyCam;
+        }
+
+        private static void SetBodyCamTexture(RenderTexture texture)
+        {
+            TerminalCommands.PiPImage.texture = texture;
+        }
+
+        private static void SetBodyCamBlanked(bool blanked)
+        {
+            TerminalCommands.PiPImage.color = blanked ? Color.black : Color.white;
+        }
+    }
+}
