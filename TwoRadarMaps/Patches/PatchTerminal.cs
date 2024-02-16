@@ -14,14 +14,14 @@ namespace TwoRadarMaps.Patches
         [HarmonyPatch(nameof(Terminal.Awake))]
         public static void AwakePostfix(Terminal __instance)
         {
+            Plugin.Terminal = __instance;
             TerminalCommands.Initialize(__instance.terminalNodes);
         }
 
         [HarmonyPrefix]
         [HarmonyPatch(nameof(Terminal.Start))]
-        static void StartPrefix(ref Terminal __instance)
+        static void StartPrefix()
         {
-            Plugin.Terminal = __instance;
             var terminalObject = Plugin.Terminal.gameObject;
             var viewMonitorNode = Plugin.Terminal.terminalNodes.allKeywords.First(keyword => keyword.word == "view")?.compatibleNouns.First(noun => noun.noun.word == "monitor")?.result;
 
