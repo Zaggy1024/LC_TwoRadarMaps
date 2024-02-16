@@ -62,7 +62,7 @@ namespace TwoRadarMaps
                 "A list of comma-separated numbers.\n" +
                 "Lower values indicate a smaller field of view.\n" +
                 "100% zoom is 19.7.");
-            ZoomLevels.SettingChanged += (s, e) => UpdateZoomFactors();
+            ZoomLevels.SettingChanged += (_, _) => UpdateZoomFactors();
             DefaultZoomLevel = Config.Bind("Zoom", "DefaultLevel", 0, "The zoom factor to select by default. The first zoom level is 0.");
 
             harmony.PatchAll(typeof(PatchTerminal));
