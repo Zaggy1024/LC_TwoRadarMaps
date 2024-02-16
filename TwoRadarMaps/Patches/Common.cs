@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -33,6 +33,40 @@ namespace TwoRadarMaps.Patches
                 instructions.RemoveAt(index);
                 instructions.RemoveAbsoluteRange(loadStartOfRound.Start, loadStartOfRound.End);
                 instructions.Insert(loadStartOfRound.Start, new CodeInstruction(OpCodes.Ldsfld, Reflection.f_Plugin_terminalMapRenderer).WithLabels(labels));
+            }
+        }
+
+        internal static void InsertTerminalField(this List<CodeInstruction> instructions, ILGenerator generator, CodeInstruction loadRenderer, FieldInfo vanillaStartOfRoundField, FieldInfo pluginField)
+        {
+            var searchIndex = 0;
+            while (true)
+            {
+                var loadVanillaField = instructions.FindIndexOfSequence(searchIndex,
+                    [
+                        insn => insn.Calls(Reflection.m_StartOfRound_Instance),
+                        insn => insn.LoadsField(vanillaStartOfRoundField),
+                    ]);
+                if (loadVanillaField == null)
+                    break;
+
+                var isNotTerminalMapLabel = generator.DefineLabel();
+                instructions[loadVanillaField.End].labels.Add(isNotTerminalMapLabel);
+
+                var isTerminalMapLabel = generator.DefineLabel();
+                CodeInstruction[] injectBefore = [
+                    new CodeInstruction(loadRenderer),
+                    new CodeInstruction(OpCodes.Ldsfld, Reflection.f_Plugin_terminalMapRenderer),
+                    new CodeInstruction(OpCodes.Beq_S, isTerminalMapLabel),
+                ];
+                instructions.InsertRange(loadVanillaField.Start, injectBefore);
+
+                CodeInstruction[] injectAfter = [
+                    new CodeInstruction(OpCodes.Br_S, isNotTerminalMapLabel),
+                    new CodeInstruction(OpCodes.Ldsfld, pluginField).WithLabels(isTerminalMapLabel),
+                ];
+                instructions.InsertRange(loadVanillaField.End + injectBefore.Length, injectAfter);
+
+                searchIndex = loadVanillaField.End + injectBefore.Length + injectAfter.Length;
             }
         }
 
