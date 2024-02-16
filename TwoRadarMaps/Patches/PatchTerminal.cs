@@ -165,14 +165,18 @@ namespace TwoRadarMaps.Patches
         [HarmonyPatch(nameof(Terminal.RunTerminalEvents))]
         static IEnumerable<CodeInstruction> TranspileRunTerminalEvents(IEnumerable<CodeInstruction> instructions)
         {
-            return Common.TranspileReplaceMainWithTerminalMapRenderer(instructions);
+            var instructionsList = new List<CodeInstruction>(instructions);
+            instructionsList.ReplaceMainMapWithTerminalMap();
+            return instructionsList;
         }
 
         [HarmonyTranspiler]
         [HarmonyPatch(nameof(Terminal.ParsePlayerSentence))]
         static IEnumerable<CodeInstruction> TranspileParsePlayerSentence(IEnumerable<CodeInstruction> instructions)
         {
-            return Common.TranspileReplaceMainWithTerminalMapRenderer(instructions);
+            var instructionsList = new List<CodeInstruction>(instructions);
+            instructionsList.ReplaceMainMapWithTerminalMap();
+            return instructionsList;
         }
 
         [HarmonyPrefix]

@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
 
 using HarmonyLib;
@@ -17,20 +18,32 @@ namespace TwoRadarMaps.Patches
 
     public static class Common
     {
-        public static IEnumerable<CodeInstruction> TranspileReplaceMainWithTerminalMapRenderer(IEnumerable<CodeInstruction> instructions)
+        public static void ReplaceMainMapWithTerminalMap(this List<CodeInstruction> instructions)
         {
-            foreach (var instruction in instructions)
+            var index = 0;
+            while (true)
             {
-                if (instruction.LoadsField(Reflection.f_StartOfRound_mapScreen))
-                {
-                    yield return new CodeInstruction(OpCodes.Pop);
-                    yield return new CodeInstruction(OpCodes.Ldsfld, Reflection.f_Plugin_terminalMapRenderer);
-                }
-                else
-                {
-                    yield return instruction;
-                }
+                index = instructions.FindIndex(index, insn => insn.LoadsField(Reflection.f_StartOfRound_mapScreen));
+                if (index == -1)
+                    break;
+
+                var loadStartOfRound = instructions.InstructionRangeForStackItems(index, 0, 0);
+                var labels = instructions[loadStartOfRound.Start].labels;
+
+                instructions.RemoveAt(index);
+                instructions.RemoveAbsoluteRange(loadStartOfRound.Start, loadStartOfRound.End);
+                instructions.Insert(loadStartOfRound.Start, new CodeInstruction(OpCodes.Ldsfld, Reflection.f_Plugin_terminalMapRenderer).WithLabels(labels));
             }
+        }
+
+        public static void RemoveAbsoluteRange<T>(this List<T> list, int start, int end)
+        {
+            list.RemoveRange(start, end - start);
+        }
+
+        public static void RemoveRange<T>(this List<T> list, SequenceMatch range)
+        {
+            list.RemoveAbsoluteRange(range.Start, range.End);
         }
 
         public static SequenceMatch FindIndexOfSequence<T>(this List<T> list, int startIndex, int count, IEnumerable<Predicate<T>> predicates)
@@ -75,6 +88,104 @@ namespace TwoRadarMaps.Patches
         public static SequenceMatch FindIndexOfSequence<T>(this List<T> list, IEnumerable<Predicate<T>> predicates)
         {
             return FindIndexOfSequence(list, 0, -1, predicates);
+        }
+
+        public static int PopCount(this CodeInstruction instruction)
+        {
+            if (instruction.opcode == OpCodes.Call || instruction.opcode == OpCodes.Callvirt)
+            {
+                var method = (MethodInfo)instruction.operand;
+                var parameterCount = method.GetParameters().Length;
+                if (!method.IsStatic)
+                    parameterCount++;
+                return parameterCount;
+            }
+
+            if (instruction.opcode == OpCodes.Ret)
+                return 1;
+
+            return instruction.opcode.StackBehaviourPop switch
+            {
+                StackBehaviour.Pop0 => 0,
+                StackBehaviour.Pop1 => 1,
+                StackBehaviour.Pop1_pop1 => 2,
+                StackBehaviour.Popi => 1,
+                StackBehaviour.Popi_pop1 => 2,
+                StackBehaviour.Popi_popi => 2,
+                StackBehaviour.Popi_popi8 => 2,
+                StackBehaviour.Popi_popi_popi => 3,
+                StackBehaviour.Popi_popr4 => 2,
+                StackBehaviour.Popi_popr8 => 2,
+                StackBehaviour.Popref => 1,
+                StackBehaviour.Popref_pop1 => 2,
+                StackBehaviour.Popref_popi => 2,
+                StackBehaviour.Popref_popi_popi => 3,
+                StackBehaviour.Popref_popi_popi8 => 3,
+                StackBehaviour.Popref_popi_popr4 => 3,
+                StackBehaviour.Popref_popi_popr8 => 3,
+                StackBehaviour.Popref_popi_popref => 3,
+                StackBehaviour.Varpop => throw new NotImplementedException("Variable pop on non-call instruction"),
+                StackBehaviour.Popref_popi_pop1 => 3,
+                _ => throw new NotSupportedException($"StackBehaviourPop of {instruction.opcode.StackBehaviourPop} was not a pop for instruction '{instruction}'"),
+            };
+        }
+
+        public static int PushCount(this CodeInstruction instruction)
+        {
+            if (instruction.opcode == OpCodes.Call || instruction.opcode == OpCodes.Callvirt)
+            {
+                var method = (MethodInfo)instruction.operand;
+                if (method.ReturnType == typeof(void))
+                    return 0;
+                return 1;
+            }
+
+            return instruction.opcode.StackBehaviourPush switch
+            {
+                StackBehaviour.Push0 => 0,
+                StackBehaviour.Push1 => 1,
+                StackBehaviour.Push1_push1 => 2,
+                StackBehaviour.Pushi => 1,
+                StackBehaviour.Pushi8 => 1,
+                StackBehaviour.Pushr4 => 1,
+                StackBehaviour.Pushr8 => 1,
+                StackBehaviour.Pushref => 1,
+                StackBehaviour.Varpush => throw new NotImplementedException("Variable push on non-call instruction"),
+                _ => throw new NotSupportedException($"StackBehaviourPush of {instruction.opcode.StackBehaviourPush} was not a push for instruction '{instruction}'"),
+            };
+        }
+
+        public static SequenceMatch InstructionRangeForStackItems(this List<CodeInstruction> instructions, int instructionIndex, int startIndex, int endIndex)
+        {
+            int start = -1;
+            int end = -1;
+
+            instructionIndex--;
+            int stackPosition = 0;
+            while (instructionIndex >= 0)
+            {
+                var instruction = instructions[instructionIndex];
+                var pushes = instruction.PushCount();
+
+                if (end == -1 && stackPosition == startIndex && pushes > 0)
+                    end = instructionIndex + 1;
+
+                stackPosition += instruction.PushCount();
+                stackPosition -= instruction.PopCount();
+
+                if (stackPosition > endIndex)
+                {
+                    start = instructionIndex;
+                    break;
+                }
+
+                instructionIndex--;
+            }
+
+            if (start == -1 || end == -1)
+                return null;
+
+            return new SequenceMatch(start, end);
         }
     }
 }
