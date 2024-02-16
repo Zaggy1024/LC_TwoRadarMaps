@@ -1,3 +1,6 @@
+## Version ~~1.2.1~~ 1.2.2
+- Fixed an unintentional hard dependency on [OpenBodyCams](https://thunderstore.io/c/lethal-company/p/Zaggy1024/OpenBodyCams/).
+
 ## Version 1.2.0
 - Added a compatibility mode for [OpenBodyCams](https://thunderstore.io/c/lethal-company/p/Zaggy1024/OpenBodyCams/) to display a separate body cam when using its `view bodycam` command.
 - Added an option to select the texture filtering used on the map. By default, nearest-neighbor (`Point`) filtering will be used.
