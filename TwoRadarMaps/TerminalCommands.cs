@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace TwoRadarMaps
 {
-    public static class Commands
+    public static class TerminalCommands
     {
         private static bool hasInitialized = false;
         public static TerminalNode CycleZoomNode = null;

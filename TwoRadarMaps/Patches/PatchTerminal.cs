@@ -14,7 +14,7 @@ namespace TwoRadarMaps.Patches
         [HarmonyPatch(nameof(Terminal.Awake))]
         public static void AwakePostfix(Terminal __instance)
         {
-            Commands.Initialize(__instance.terminalNodes);
+            TerminalCommands.Initialize(__instance.terminalNodes);
         }
 
         [HarmonyPrefix]
@@ -176,7 +176,7 @@ namespace TwoRadarMaps.Patches
         [HarmonyPatch(nameof(Terminal.RunTerminalEvents))]
         static bool RunTerminalEventsPrefix(TerminalNode __0)
         {
-            return Commands.ProcessNode(__0);
+            return TerminalCommands.ProcessNode(__0);
         }
     }
 }

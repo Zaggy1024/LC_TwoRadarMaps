@@ -51,20 +51,20 @@ namespace TwoRadarMaps.Compatibility
             Object.Destroy(TerminalBodyCam);
             TerminalBodyCam = null;
 
-            if (TerminalCommands.PiPImage == null)
+            if (OpenBodyCams.TerminalCommands.PiPImage == null)
                 return;
 
             var terminalBodyCam = BodyCam.CreateBodyCam(Plugin.Terminal.gameObject, null, Plugin.terminalMapRenderer);
             TerminalBodyCam = terminalBodyCam;
 
-            ShipObjects.MainBodyCam.OnRenderTextureCreated -= TerminalCommands.SetRenderTexture;
+            ShipObjects.MainBodyCam.OnRenderTextureCreated -= OpenBodyCams.TerminalCommands.SetRenderTexture;
             terminalBodyCam.OnRenderTextureCreated += SetBodyCamTexture;
             SetBodyCamTexture(terminalBodyCam.GetCamera().targetTexture);
 
-            ShipObjects.MainBodyCam.OnBlankedSet -= TerminalCommands.SetBodyCamBlanked;
+            ShipObjects.MainBodyCam.OnBlankedSet -= OpenBodyCams.TerminalCommands.SetBodyCamBlanked;
             terminalBodyCam.OnBlankedSet += SetBodyCamBlanked;
 
-            TerminalCommands.PiPImage.GetComponent<TerminalBodyCamVisibilityTracker>().BodyCamToActivate = terminalBodyCam;
+            OpenBodyCams.TerminalCommands.PiPImage.GetComponent<TerminalBodyCamVisibilityTracker>().BodyCamToActivate = terminalBodyCam;
         }
 
         public static void UpdateBodyCamTexture()
@@ -81,12 +81,12 @@ namespace TwoRadarMaps.Compatibility
         private static void SetBodyCamTexture(RenderTexture texture)
         {
             texture.filterMode = Plugin.TextureFiltering.Value;
-            TerminalCommands.PiPImage.texture = texture;
+            OpenBodyCams.TerminalCommands.PiPImage.texture = texture;
         }
 
         private static void SetBodyCamBlanked(bool blanked)
         {
-            TerminalCommands.PiPImage.color = blanked ? Color.black : Color.white;
+            OpenBodyCams.TerminalCommands.PiPImage.color = blanked ? Color.black : Color.white;
         }
     }
 }
