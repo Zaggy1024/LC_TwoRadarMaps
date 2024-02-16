@@ -23,6 +23,10 @@
             <HintPath>..\..\Libraries\Assembly-CSharp.dll</HintPath>
             <Private>false</Private>
         </Reference>
+        <Reference Include="EnhancedRadarBooster" Publicize="true">
+            <HintPath>..\..\Libraries\EnhancedRadarBooster.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
         <Reference Include="OpenBodyCams">
             <HintPath>..\..\Libraries\OpenBodyCams.dll</HintPath>
             <Private>false</Private>

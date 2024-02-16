@@ -16,6 +16,7 @@ namespace TwoRadarMaps
 {
     [BepInPlugin(MOD_UNIQUE_NAME, MOD_NAME, MOD_VERSION)]
     [BepInDependency(OpenBodyCamsCompatibility.MOD_ID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(EnhancedRadarBoosterCompatibility.MOD_ID, BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
         private const string MOD_NAME = "TwoRadarMaps";
@@ -74,6 +75,7 @@ namespace TwoRadarMaps
             RenderPipelineManager.beginCameraRendering += BeforeCameraRendering;
 
             OpenBodyCamsCompatibility.Initialize();
+            EnhancedRadarBoosterCompatibility.Initialize(harmony);
         }
 
         public static void BeforeCameraRendering(ScriptableRenderContext context, Camera camera)
@@ -135,6 +137,11 @@ namespace TwoRadarMaps
             UpdateZoomFactors(ZoomLevels.Value);
         }
 
+        public static float GetZoomOrthographicSize()
+        {
+            return terminalMapZoomLevelOptions[terminalMapZoomLevel];
+        }
+
         public static void SetZoomLevel(int level)
         {
             if (terminalMapRenderer is null)
@@ -143,7 +150,7 @@ namespace TwoRadarMaps
             terminalMapRenderer.mapCameraAnimator.SetTrigger("Transition");
 
             terminalMapZoomLevel = Math.Max(0, Math.Min(level, terminalMapZoomLevelOptions.Length - 1));
-            terminalMapRenderer.cam.orthographicSize = terminalMapZoomLevelOptions[terminalMapZoomLevel];
+            terminalMapRenderer.cam.orthographicSize = GetZoomOrthographicSize();
         }
 
         public static void CycleTerminalMapZoom()
