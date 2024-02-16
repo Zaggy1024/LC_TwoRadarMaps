@@ -1,3 +1,6 @@
+## Version 1.2.3
+- Added a compatibility patch for EnhancedRadarBooster's to allow the `zoom` command to work with the mod's increased radar booster map range.
+
 ## Version ~~1.2.1~~ 1.2.2
 - Fixed an unintentional hard dependency on [OpenBodyCams](https://thunderstore.io/c/lethal-company/p/Zaggy1024/OpenBodyCams/).
 
