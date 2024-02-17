@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-
+using System.Text;
 using UnityEngine;
 
 namespace TwoRadarMaps
@@ -16,6 +16,7 @@ namespace TwoRadarMaps
 
         private static readonly List<TerminalKeyword> newTerminalKeywords = [];
         private static readonly List<TerminalKeyword> modifiedTerminalKeywords = [];
+        private static readonly List<(TerminalNode, string)> appendedDescriptions = [];
 
         public static void Initialize()
         {
@@ -73,6 +74,9 @@ namespace TwoRadarMaps
                             result = ResetZoomNode,
                         },
                     ]);
+
+                AddCommandDescription("other", "ZOOM", "Cycle through zoom levels on the map. Specify direction with 'in' and 'out'.");
+                AddCommandDescription("other", "RESET ZOOM", "Reset the map's zoom level to the default.");
             }
 
             if (Plugin.EnableTeleportCommand.Value)
@@ -91,11 +95,16 @@ namespace TwoRadarMaps
                         }
                     ]);
 
+                var shorthandDescription = "";
+
                 if (Plugin.EnableTeleportCommandShorthand.Value)
                 {
                     var teleportShorthandKeyword = FindOrCreateKeyword("TeleportShorthand", "tp", true);
                     teleportShorthandKeyword.specialKeywordResult = TeleportNode;
+                    shorthandDescription = " The shorthand 'TP' can be used.";
                 }
+
+                AddCommandDescription("other", "ACTIVATE TELEPORTER", "Activate the teleporter to beam the player monitored on the map into the ship." + shorthandDescription);
             }
 
             AddNewlyCreatedCommands();
@@ -137,26 +146,6 @@ namespace TwoRadarMaps
             return true;
         }
 
-        static void RemoveAddedKeywords()
-        {
-            // Remove references to new keywords.
-            foreach (var keyword in modifiedTerminalKeywords)
-            {
-                if (keyword.compatibleNouns != null)
-                    keyword.compatibleNouns = [.. keyword.compatibleNouns.Where(compatible => !newTerminalKeywords.Contains(compatible.noun))];
-            }
-            modifiedTerminalKeywords.Clear();
-
-            // Remove new keywords.
-            foreach (var keyword in newTerminalKeywords)
-                Object.Destroy(keyword);
-
-            var nodes = Plugin.Terminal.terminalNodes;
-            nodes.allKeywords = [.. nodes.allKeywords.Where(keyword => !newTerminalKeywords.Contains(keyword))];
-
-            newTerminalKeywords.Clear();
-        }
-
         static TerminalKeyword FindKeyword(string word, bool verb)
         {
             return Plugin.Terminal.terminalNodes.allKeywords.FirstOrDefault(keyword => keyword.word == word && keyword.isVerb == verb);
@@ -195,6 +184,47 @@ namespace TwoRadarMaps
         {
             var nodes = Plugin.Terminal.terminalNodes;
             nodes.allKeywords = [.. nodes.allKeywords, .. newTerminalKeywords];
+        }
+
+        static void AddCommandDescription(string category, string word, string description)
+        {
+            var node = FindKeyword(category, verb: false).specialKeywordResult;
+            var text = new StringBuilder(word.Length + description.Length + 5)
+                .Append(">").AppendLine(word)
+                .AppendLine(description)
+                .AppendLine()
+                .ToString();
+            node.displayText += text;
+            appendedDescriptions.Add((node, text));
+        }
+
+        static void RemoveAddedKeywords()
+        {
+            // Remove references to new keywords.
+            foreach (var keyword in modifiedTerminalKeywords)
+            {
+                if (keyword.compatibleNouns != null)
+                    keyword.compatibleNouns = [.. keyword.compatibleNouns.Where(compatible => !newTerminalKeywords.Contains(compatible.noun))];
+            }
+            modifiedTerminalKeywords.Clear();
+
+            // Remove new keywords.
+            foreach (var keyword in newTerminalKeywords)
+                Object.Destroy(keyword);
+
+            var nodes = Plugin.Terminal.terminalNodes;
+            nodes.allKeywords = [.. nodes.allKeywords.Where(keyword => !newTerminalKeywords.Contains(keyword))];
+
+            newTerminalKeywords.Clear();
+
+            // Remove command descriptions.
+            foreach (var (node, description) in appendedDescriptions)
+            {
+                var index = node.displayText.IndexOf(description);
+                node.displayText = node.displayText.Remove(index, description.Length);
+            }
+
+            appendedDescriptions.Clear();
         }
     }
 }
