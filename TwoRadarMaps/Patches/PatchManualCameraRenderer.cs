@@ -18,13 +18,6 @@ namespace TwoRadarMaps.Patches
             return instructionsList;
         }
 
-        [HarmonyPatch(nameof(ManualCameraRenderer.ChangeNameOfTargetTransform))]
-        [HarmonyPostfix]
-        static void ChangeNameOfTargetTransformPostfix(ref ManualCameraRenderer __instance)
-        {
-            Plugin.UpdateRadarTargets();
-        }
-
         [HarmonyPatch(nameof(ManualCameraRenderer.MapCameraFocusOnPosition))]
         [HarmonyTranspiler]
         static IEnumerable<CodeInstruction> MapCameraFocusOnPositionTranspiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
@@ -32,6 +25,34 @@ namespace TwoRadarMaps.Patches
             var instructionsList = instructions.ToList();
             instructionsList.InsertTerminalField(generator, new CodeInstruction(OpCodes.Ldarg_0), Reflection.f_StartOfRound_radarCanvas, Reflection.f_Plugin_terminalMapScreenUICanvas);
             return instructionsList;
+        }
+
+        [HarmonyPatch(nameof(ManualCameraRenderer.ChangeNameOfTargetTransform))]
+        [HarmonyPostfix]
+        static void ChangeNameOfTargetTransformPostfix(ManualCameraRenderer __instance)
+        {
+            Plugin.EnsureAllRenderersHaveValidTargets();
+        }
+
+        [HarmonyPatch(nameof(ManualCameraRenderer.AddTransformAsTargetToRadar))]
+        [HarmonyPostfix]
+        static void AddTransformAsTargetToRadarPostfix(ManualCameraRenderer __instance)
+        {
+            Plugin.EnsureAllRenderersHaveValidTargets();
+        }
+
+        [HarmonyPatch(nameof(ManualCameraRenderer.RemoveTargetFromRadar))]
+        [HarmonyPostfix]
+        static void RemoveTargetFromRadarPostfix(ManualCameraRenderer __instance)
+        {
+            Plugin.EnsureAllRenderersHaveValidTargets();
+        }
+
+        [HarmonyPatch(nameof(ManualCameraRenderer.SyncOrderOfRadarBoostersInList))]
+        [HarmonyPostfix]
+        static void SyncOrderOfRadarBoostersInListPostfix(ManualCameraRenderer __instance)
+        {
+            Plugin.UpdateTerminalMapTargetList();
         }
     }
 }

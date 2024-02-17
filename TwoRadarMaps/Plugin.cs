@@ -5,6 +5,7 @@ using System.Globalization;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
+using GameNetcodeStuff;
 using HarmonyLib;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -69,7 +70,6 @@ namespace TwoRadarMaps
             harmony.PatchAll(typeof(PatchTerminal));
             harmony.PatchAll(typeof(PatchManualCameraRenderer));
             harmony.PatchAll(typeof(PatchPlayerControllerB));
-            harmony.PatchAll(typeof(PatchRadarBoosterItem));
 
             // Enable each map's night vision light only when rendering that map camera.
             // This allows night vision to work outside the facility.
@@ -102,18 +102,66 @@ namespace TwoRadarMaps
             currentMapRenderer.mapCameraLight.enabled = true;
         }
 
-        public static void UpdateRadarTargets()
+        private static bool TargetIsValid(Transform targetTransform)
         {
-            var mainMapRenderer = StartOfRound.Instance.mapScreen;
-            terminalMapRenderer.radarTargets = mainMapRenderer.radarTargets;
+            if (targetTransform == null)
+                return false;
+            var player = targetTransform.transform.GetComponent<PlayerControllerB>();
+            if (player == null)
+                return true;
+            return player.isPlayerControlled || player.isPlayerDead || player.redirectToEnemy != null;
+        }
 
-            // Bug fix for vanilla: Update both map targets to their current target to force checking
-            // for the validity of the selected player when the lobby is not full.
-            if (StartOfRound.Instance.IsServer)
+        internal static void SetTargetIndex(ManualCameraRenderer mapRenderer, int targetIndex, bool setText = true)
+        {
+            if (targetIndex >= mapRenderer.radarTargets.Count)
+                return;
+
+            Instance.Logger.LogInfo($"Set {mapRenderer.name}'s target index to {targetIndex} ({mapRenderer.radarTargets[targetIndex].name}) / {mapRenderer.radarTargets.Count}.");
+            var stack = new System.Diagnostics.StackTrace();
+            foreach (var frame in stack.GetFrames())
+                Instance.Logger.LogInfo($"  {frame.GetMethod().DeclaringType.FullName}.{frame.GetMethod()}");
+            mapRenderer.targetTransformIndex = targetIndex;
+            mapRenderer.targetedPlayer = mapRenderer.radarTargets[targetIndex].transform.GetComponent<PlayerControllerB>();
+
+            if (!setText)
+                return;
+
+            var monitoringText = "MONITORING: " + mapRenderer.radarTargets[targetIndex].name;
+            if (mapRenderer == terminalMapRenderer)
+                terminalMapScreenPlayerName.text = monitoringText;
+            else
+                StartOfRound.Instance.mapScreenPlayerName.text = monitoringText;
+        }
+
+        internal static void EnsureMapRendererHasValidTarget(ManualCameraRenderer mapRenderer)
+        {
+            var targetCount = mapRenderer.radarTargets.Count;
+            for (int i = 0; i < targetCount; i++)
             {
-                mainMapRenderer.SwitchRadarTargetAndSync(Math.Min(mainMapRenderer.targetTransformIndex, mainMapRenderer.radarTargets.Count - 1));
-                terminalMapRenderer.SwitchRadarTargetAndSync(Math.Min(terminalMapRenderer.targetTransformIndex, terminalMapRenderer.radarTargets.Count - 1));
+                var targetIndex = (mapRenderer.targetTransformIndex + i) % targetCount;
+                if (TargetIsValid(mapRenderer.radarTargets[targetIndex]?.transform))
+                {
+                    SetTargetIndex(mapRenderer, targetIndex);
+                    return;
+                }
             }
+            Instance.Logger.LogInfo($"Failed to find valid target for {mapRenderer.name}.");
+            var stack = new System.Diagnostics.StackTrace();
+            foreach (var frame in stack.GetFrames())
+                Instance.Logger.LogInfo($"  {frame.GetMethod().DeclaringType.FullName}.{frame.GetMethod()}");
+        }
+
+        public static void EnsureAllRenderersHaveValidTargets()
+        {
+            EnsureMapRendererHasValidTarget(StartOfRound.Instance.mapScreen);
+            EnsureMapRendererHasValidTarget(terminalMapRenderer);
+        }
+
+        public static void UpdateTerminalMapTargetList()
+        {
+            terminalMapRenderer.radarTargets = StartOfRound.Instance.mapScreen.radarTargets;
+            EnsureMapRendererHasValidTarget(terminalMapRenderer);
         }
 
         public static void UpdateZoomFactors(string factors)
