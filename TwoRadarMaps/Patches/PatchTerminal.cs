@@ -150,13 +150,13 @@ namespace TwoRadarMaps.Patches
             viewMonitorNode.displayTexture = terminalMapRenderer.cam.targetTexture;
 
             Plugin.Instance.Logger.LogInfo($"Terminal node '{viewMonitorNode.name}' will now use a separate texture.");
-            Plugin.terminalMapRenderer = terminalMapRenderer;
-            Plugin.terminalMapScreenUICanvas = terminalMapScreenUICanvas;
-            Plugin.terminalMapScreenPlayerName = terminalMapPlayerName;
+            Plugin.TerminalMapRenderer = terminalMapRenderer;
+            Plugin.TerminalMapScreenUICanvas = terminalMapScreenUICanvas;
+            Plugin.TerminalMapScreenPlayerName = terminalMapPlayerName;
 
             // Disable the camera until the player interacts with the terminal.
-            Plugin.terminalMapRenderer.SwitchScreenOn(false);
-            Plugin.terminalMapRenderer.cam.enabled = false;
+            Plugin.TerminalMapRenderer.SwitchScreenOn(false);
+            Plugin.TerminalMapRenderer.cam.enabled = false;
 
             Plugin.Terminal.terminalUIScreen.gameObject.AddComponent<TerminalVisibilityTracker>();
         }

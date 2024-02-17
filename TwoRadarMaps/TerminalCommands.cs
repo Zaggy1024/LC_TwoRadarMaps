@@ -126,8 +126,8 @@ namespace TwoRadarMaps
                     TeleportNode.displayText = "Teleporter is not installed.\n\n";
                     return true;
                 }
-                TeleportNode.displayText = $"Teleporting {StartOfRound.Instance.mapScreen.radarTargets[Plugin.terminalMapRenderer.targetTransformIndex]?.name}...\n\n";
-                Plugin.TeleportTarget(Plugin.terminalMapRenderer.targetTransformIndex);
+                TeleportNode.displayText = $"Teleporting {StartOfRound.Instance.mapScreen.radarTargets[Plugin.TerminalMapRenderer.targetTransformIndex]?.name}...\n\n";
+                Plugin.TeleportTarget(Plugin.TerminalMapRenderer.targetTransformIndex);
                 return false;
             }
             return true;

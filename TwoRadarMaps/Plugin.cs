@@ -41,11 +41,11 @@ namespace TwoRadarMaps
         internal static Terminal Terminal;
         internal static ShipTeleporter Teleporter;
 
-        public static ManualCameraRenderer terminalMapRenderer;
-        public static TMPro.TextMeshProUGUI terminalMapScreenPlayerName;
-        public static Canvas terminalMapScreenUICanvas;
-        public static float[] terminalMapZoomLevelOptions;
-        public static int terminalMapZoomLevel;
+        public static ManualCameraRenderer TerminalMapRenderer;
+        public static TMPro.TextMeshProUGUI TerminalMapScreenPlayerName;
+        public static Canvas TerminalMapScreenUICanvas;
+        public static float[] TerminalMapZoomLevelOptions;
+        public static int TerminalMapZoomLevel;
 
         public void Awake()
         {
@@ -57,7 +57,7 @@ namespace TwoRadarMaps
                 "Bilinear and Trilinear will result in smooth transitions between pixels.");
             TextureFiltering.SettingChanged += (_, _) =>
             {
-                terminalMapRenderer.cam.targetTexture.filterMode = TextureFiltering.Value;
+                TerminalMapRenderer.cam.targetTexture.filterMode = TextureFiltering.Value;
                 OpenBodyCamsCompatibility.UpdateBodyCamTexture();
             };
 
@@ -94,14 +94,14 @@ namespace TwoRadarMaps
                 return;
 
             mainMapRenderer.mapCameraLight.enabled = false;
-            if (terminalMapRenderer != null)
-                terminalMapRenderer.mapCameraLight.enabled = false;
+            if (TerminalMapRenderer != null)
+                TerminalMapRenderer.mapCameraLight.enabled = false;
 
             ManualCameraRenderer currentMapRenderer = null;
             if (camera == mainMapRenderer.cam)
                 currentMapRenderer = mainMapRenderer;
-            else if (camera == terminalMapRenderer.cam)
-                currentMapRenderer = terminalMapRenderer;
+            else if (camera == TerminalMapRenderer.cam)
+                currentMapRenderer = TerminalMapRenderer;
 
             if (currentMapRenderer == null)
                 return;
@@ -136,8 +136,8 @@ namespace TwoRadarMaps
                 return;
 
             var monitoringText = "MONITORING: " + mapRenderer.radarTargets[targetIndex].name;
-            if (mapRenderer == terminalMapRenderer)
-                terminalMapScreenPlayerName.text = monitoringText;
+            if (mapRenderer == TerminalMapRenderer)
+                TerminalMapScreenPlayerName.text = monitoringText;
             else
                 StartOfRound.Instance.mapScreenPlayerName.text = monitoringText;
         }
@@ -163,20 +163,20 @@ namespace TwoRadarMaps
         public static void EnsureAllRenderersHaveValidTargets()
         {
             EnsureMapRendererHasValidTarget(StartOfRound.Instance.mapScreen);
-            EnsureMapRendererHasValidTarget(terminalMapRenderer);
+            EnsureMapRendererHasValidTarget(TerminalMapRenderer);
         }
 
         public static void UpdateTerminalMapTargetList()
         {
-            terminalMapRenderer.radarTargets = StartOfRound.Instance.mapScreen.radarTargets;
-            EnsureMapRendererHasValidTarget(terminalMapRenderer);
+            TerminalMapRenderer.radarTargets = StartOfRound.Instance.mapScreen.radarTargets;
+            EnsureMapRendererHasValidTarget(TerminalMapRenderer);
         }
 
         public static void UpdateZoomFactors(string factors)
         {
             try
             {
-                terminalMapZoomLevelOptions = factors
+                TerminalMapZoomLevelOptions = factors
                     .Split(new char[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
                     .Select(s => float.Parse(s.Trim(), CultureInfo.InvariantCulture))
                     .ToArray();
@@ -196,33 +196,33 @@ namespace TwoRadarMaps
 
         public static float GetZoomOrthographicSize()
         {
-            return terminalMapZoomLevelOptions[terminalMapZoomLevel];
+            return TerminalMapZoomLevelOptions[TerminalMapZoomLevel];
         }
 
         public static void SetZoomLevel(int level)
         {
-            if (terminalMapRenderer == null)
+            if (TerminalMapRenderer == null)
                 return;
 
-            terminalMapRenderer.mapCameraAnimator.SetTrigger("Transition");
+            TerminalMapRenderer.mapCameraAnimator.SetTrigger("Transition");
 
-            terminalMapZoomLevel = Math.Max(0, Math.Min(level, terminalMapZoomLevelOptions.Length - 1));
-            terminalMapRenderer.cam.orthographicSize = GetZoomOrthographicSize();
+            TerminalMapZoomLevel = Math.Max(0, Math.Min(level, TerminalMapZoomLevelOptions.Length - 1));
+            TerminalMapRenderer.cam.orthographicSize = GetZoomOrthographicSize();
         }
 
         public static void CycleTerminalMapZoom()
         {
-            SetZoomLevel((terminalMapZoomLevel + 1) % terminalMapZoomLevelOptions.Length);
+            SetZoomLevel((TerminalMapZoomLevel + 1) % TerminalMapZoomLevelOptions.Length);
         }
 
         public static void ZoomTerminalMapIn()
         {
-            SetZoomLevel(terminalMapZoomLevel - 1);
+            SetZoomLevel(TerminalMapZoomLevel - 1);
         }
 
         public static void ZoomTerminalMapOut()
         {
-            SetZoomLevel(terminalMapZoomLevel + 1);
+            SetZoomLevel(TerminalMapZoomLevel + 1);
         }
 
         public static void TeleportTarget(int targetIndex)

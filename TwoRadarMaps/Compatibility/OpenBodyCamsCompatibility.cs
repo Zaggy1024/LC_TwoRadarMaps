@@ -54,7 +54,7 @@ namespace TwoRadarMaps.Compatibility
             if (OpenBodyCams.TerminalCommands.PiPImage == null)
                 return;
 
-            var terminalBodyCam = BodyCam.CreateBodyCam(Plugin.Terminal.gameObject, null, Plugin.terminalMapRenderer);
+            var terminalBodyCam = BodyCam.CreateBodyCam(Plugin.Terminal.gameObject, null, Plugin.TerminalMapRenderer);
             TerminalBodyCam = terminalBodyCam;
 
             ShipObjects.MainBodyCam.OnRenderTextureCreated -= OpenBodyCams.TerminalCommands.SetRenderTexture;
