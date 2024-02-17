@@ -35,6 +35,7 @@ namespace TwoRadarMaps
         public static ConfigEntry<FilterMode> TextureFiltering;
 
         public static ConfigEntry<bool> EnableTeleportCommand;
+        public static ConfigEntry<bool> EnableTeleportCommandShorthand;
 
         const string DEFAULT_ZOOM_LEVELS = "19.7, 29.55, 39.4";
 
@@ -73,6 +74,8 @@ namespace TwoRadarMaps
 
             EnableTeleportCommand = Config.Bind("TeleportCommand", "Enabled", false, "Enable an 'activate teleport' command in the terminal. A player can be specified to teleport them instead of the target of the terminal's map.");
             EnableTeleportCommand.SettingChanged += (_, _) => TerminalCommands.Initialize();
+            EnableTeleportCommandShorthand = Config.Bind("TeleportCommand", "ShorthandEnabled", true, "Enable a 'tp' shorthand for the 'activate teleport' command. Will only function if the longhand command is enabled.");
+            EnableTeleportCommandShorthand.SettingChanged += (_, _) => TerminalCommands.Initialize();
 
             Harmony.PatchAll(typeof(PatchTerminal));
             Harmony.PatchAll(typeof(PatchManualCameraRenderer));

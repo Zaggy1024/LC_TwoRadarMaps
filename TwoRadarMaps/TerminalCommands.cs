@@ -92,6 +92,12 @@ namespace TwoRadarMaps
                             result = TeleportNode,
                         }
                     ]);
+
+                if (Plugin.EnableTeleportCommandShorthand.Value)
+                {
+                    var teleportShorthandKeyword = FindOrCreateKeyword("TeleportShorthand", "tp", true);
+                    teleportShorthandKeyword.specialKeywordResult = TeleportNode;
+                }
             }
 
             AddNewlyCreatedCommands();
