@@ -145,7 +145,7 @@ namespace TwoRadarMaps
 
         public static void SetZoomLevel(int level)
         {
-            if (terminalMapRenderer is null)
+            if (terminalMapRenderer == null)
                 return;
 
             terminalMapRenderer.mapCameraAnimator.SetTrigger("Transition");
