@@ -1,3 +1,7 @@
+## Version 1.3.1
+- Add descriptions for all commands under the `other` help category.
+- Remove some debug spam that would occur when teleporting players from the terminal.
+
 ## Version 1.3.0
 - Added an opt-in `activate teleporter` command to allow teleporting the player that is targeted on the terminal map.
 - The vanilla bug fixes to solve issues with invalid map targets being selected by both maps have been improved, but should function largely the same.

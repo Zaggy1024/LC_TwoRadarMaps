@@ -22,7 +22,7 @@ namespace TwoRadarMaps
     {
         private const string MOD_NAME = "TwoRadarMaps";
         private const string MOD_UNIQUE_NAME = "Zaggy1024." + MOD_NAME;
-        private const string MOD_VERSION = "1.3.0";
+        private const string MOD_VERSION = "1.3.1";
 
         internal static readonly Harmony Harmony = new(MOD_UNIQUE_NAME);
 
