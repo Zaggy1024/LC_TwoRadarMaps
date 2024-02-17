@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 using UnityEngine;
@@ -11,6 +11,8 @@ namespace TwoRadarMaps
         public static TerminalNode ZoomInNode = null;
         public static TerminalNode ZoomOutNode = null;
         public static TerminalNode ResetZoomNode = null;
+
+        public static TerminalNode TeleportNode = null;
 
         private static readonly List<TerminalKeyword> newTerminalKeywords = [];
         private static readonly List<TerminalKeyword> modifiedTerminalKeywords = [];
@@ -75,6 +77,23 @@ namespace TwoRadarMaps
                     ]);
             }
 
+            if (Plugin.EnableTeleportCommand.Value)
+            {
+                TeleportNode = ScriptableObject.CreateInstance<TerminalNode>();
+                TeleportNode.name = "TeleportNode";
+                TeleportNode.clearPreviousText = true;
+
+                TerminalKeyword teleporterNounKeyword = FindOrCreateKeyword("Teleporter", "teleporter", false);
+                FindOrCreateKeyword("Activate", "activate", true,
+                    [
+                        new CompatibleNoun()
+                        {
+                            noun = teleporterNounKeyword,
+                            result = TeleportNode,
+                        }
+                    ]);
+            }
+
             AddNewlyCreatedCommands();
         }
 
@@ -98,6 +117,17 @@ namespace TwoRadarMaps
             if (node == ResetZoomNode)
             {
                 Plugin.SetZoomLevel(Plugin.DefaultZoomLevel.Value);
+                return false;
+            }
+            if (node == TeleportNode)
+            {
+                if (Plugin.Teleporter == null)
+                {
+                    TeleportNode.displayText = "Teleporter is not installed.\n\n";
+                    return true;
+                }
+                TeleportNode.displayText = $"Teleporting {StartOfRound.Instance.mapScreen.radarTargets[Plugin.terminalMapRenderer.targetTransformIndex]?.name}...\n\n";
+                Plugin.TeleportTarget(Plugin.terminalMapRenderer.targetTransformIndex);
                 return false;
             }
             return true;

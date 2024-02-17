@@ -24,7 +24,7 @@ namespace TwoRadarMaps
         private const string MOD_UNIQUE_NAME = "Zaggy1024." + MOD_NAME;
         private const string MOD_VERSION = "1.2.3";
 
-        private readonly Harmony harmony = new(MOD_UNIQUE_NAME);
+        internal static readonly Harmony Harmony = new(MOD_UNIQUE_NAME);
 
         public static Plugin Instance { get; private set; }
         public new ManualLogSource Logger => base.Logger;
@@ -34,9 +34,13 @@ namespace TwoRadarMaps
         public static ConfigEntry<int> DefaultZoomLevel;
         public static ConfigEntry<FilterMode> TextureFiltering;
 
+        public static ConfigEntry<bool> EnableTeleportCommand;
+
         const string DEFAULT_ZOOM_LEVELS = "19.7, 29.55, 39.4";
 
         internal static Terminal Terminal;
+        internal static ShipTeleporter Teleporter;
+
         public static ManualCameraRenderer terminalMapRenderer;
         public static TMPro.TextMeshProUGUI terminalMapScreenPlayerName;
         public static Canvas terminalMapScreenUICanvas;
@@ -67,16 +71,20 @@ namespace TwoRadarMaps
             ZoomLevels.SettingChanged += (_, _) => UpdateZoomFactors();
             DefaultZoomLevel = Config.Bind("Zoom", "DefaultLevel", 0, "The zoom factor to select by default. The first zoom level is 0.");
 
-            harmony.PatchAll(typeof(PatchTerminal));
-            harmony.PatchAll(typeof(PatchManualCameraRenderer));
-            harmony.PatchAll(typeof(PatchPlayerControllerB));
+            EnableTeleportCommand = Config.Bind("TeleportCommand", "Enabled", false, "Enable a 'teleport' command in the terminal. A player can be specified to teleport them instead of the target of the terminal's map.");
+            EnableTeleportCommand.SettingChanged += (_, _) => TerminalCommands.Initialize();
+
+            Harmony.PatchAll(typeof(PatchTerminal));
+            Harmony.PatchAll(typeof(PatchManualCameraRenderer));
+            Harmony.PatchAll(typeof(PatchPlayerControllerB));
+            Harmony.PatchAll(typeof(PatchShipTeleporter));
 
             // Enable each map's night vision light only when rendering that map camera.
             // This allows night vision to work outside the facility.
             RenderPipelineManager.beginCameraRendering += BeforeCameraRendering;
 
             OpenBodyCamsCompatibility.Initialize();
-            EnhancedRadarBoosterCompatibility.Initialize(harmony);
+            EnhancedRadarBoosterCompatibility.Initialize(Harmony);
         }
 
         public static void BeforeCameraRendering(ScriptableRenderContext context, Camera camera)
@@ -215,6 +223,26 @@ namespace TwoRadarMaps
         public static void ZoomTerminalMapOut()
         {
             SetZoomLevel(terminalMapZoomLevel + 1);
+        }
+
+        public static void TeleportTarget(int targetIndex)
+        {
+            var mapRenderer = StartOfRound.Instance.mapScreen;
+            if (mapRenderer.targetTransformIndex >= mapRenderer.radarTargets.Count)
+            {
+                Instance.Logger.LogError($"Attempted to teleport target #{targetIndex} which is out of bounds of the {mapRenderer.radarTargets.Count} targets available.");
+                return;
+            }
+            if (Teleporter == null)
+            {
+                Instance.Logger.LogError($"Attempted to teleport target #{targetIndex} ({mapRenderer.radarTargets[targetIndex].name}) with no teleporter.");
+                return;
+            }
+
+            var oldIndex = mapRenderer.targetTransformIndex;
+            SetTargetIndex(mapRenderer, targetIndex, setText: false);
+            Teleporter.PressTeleportButtonOnLocalClient();
+            SetTargetIndex(mapRenderer, oldIndex, setText: false);
         }
     }
 }

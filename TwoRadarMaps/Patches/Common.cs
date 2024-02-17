@@ -216,5 +216,34 @@ namespace TwoRadarMaps.Patches
 
             return new SequenceMatch(start, end);
         }
+
+        public static MethodInfo GetMethod(this Type type, string name, BindingFlags bindingFlags, Type[] parameters)
+        {
+            return type.GetMethod(name, bindingFlags, null, parameters, null);
+        }
+
+        public static MethodInfo GetGenericMethod(this Type type, string name, BindingFlags bindingFlags, Type[] genericArguments, Type[] parameters)
+        {
+            foreach (var method in type.GetMethods(bindingFlags))
+            {
+                if (method.Name != name)
+                    continue;
+                if (!method.IsGenericMethodDefinition)
+                    continue;
+                var candidateGenericArguments = method.GetGenericArguments();
+                if (candidateGenericArguments.Length != genericArguments.Length)
+                    continue;
+                var specialized = method.MakeGenericMethod(genericArguments);
+                if (specialized.GetParameters().Select(paramInfo => paramInfo.ParameterType) != parameters)
+                    continue;
+                return specialized;
+            }
+            return null;
+        }
+
+        public static MethodInfo GetGenericMethod(this Type type, string name, Type[] genericArguments, Type[] parameters)
+        {
+            return type.GetGenericMethod(name, BindingFlags.Default, genericArguments, parameters);
+        }
     }
 }
