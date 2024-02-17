@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 
 using UnityEngine;
@@ -49,8 +49,8 @@ namespace TwoRadarMaps
                 ResetZoomNode.displayText = "";
                 ResetZoomNode.clearPreviousText = true;
 
-                TerminalKeyword inKeyword = FindOrCreateKeyword("In", "in", false);
-                TerminalKeyword outKeyword = FindOrCreateKeyword("Out", "out", false);
+                var inKeyword = FindOrCreateKeyword("In", "in", false);
+                var outKeyword = FindOrCreateKeyword("Out", "out", false);
                 var zoomVerbKeyword = FindOrCreateKeyword("Zoom", "zoom", true,
                     [
                         new CompatibleNoun()
@@ -66,7 +66,7 @@ namespace TwoRadarMaps
                     ]);
                 zoomVerbKeyword.specialKeywordResult = CycleZoomNode;
 
-                TerminalKeyword zoomNounKeyword = FindOrCreateKeyword("Zoom", "zoom", false);
+                var zoomNounKeyword = FindOrCreateKeyword("Zoom", "zoom", false);
                 var resetVerbKeyword = FindOrCreateKeyword("Reset", "reset", true,
                     [
                         new CompatibleNoun()
@@ -83,7 +83,7 @@ namespace TwoRadarMaps
                 TeleportNode.name = "TeleportNode";
                 TeleportNode.clearPreviousText = true;
 
-                TerminalKeyword teleporterNounKeyword = FindOrCreateKeyword("Teleporter", "teleporter", false);
+                var teleporterNounKeyword = FindOrCreateKeyword("Teleporter", "teleporter", false);
                 FindOrCreateKeyword("Activate", "activate", true,
                     [
                         new CompatibleNoun()
