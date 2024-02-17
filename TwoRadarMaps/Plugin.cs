@@ -128,10 +128,6 @@ namespace TwoRadarMaps
             if (targetIndex >= mapRenderer.radarTargets.Count)
                 return;
 
-            Instance.Logger.LogInfo($"Set {mapRenderer.name}'s target index to {targetIndex} ({mapRenderer.radarTargets[targetIndex].name}) / {mapRenderer.radarTargets.Count}.");
-            var stack = new System.Diagnostics.StackTrace();
-            foreach (var frame in stack.GetFrames())
-                Instance.Logger.LogInfo($"  {frame.GetMethod().DeclaringType.FullName}.{frame.GetMethod()}");
             mapRenderer.targetTransformIndex = targetIndex;
             mapRenderer.targetedPlayer = mapRenderer.radarTargets[targetIndex].transform.GetComponent<PlayerControllerB>();
 
@@ -157,10 +153,6 @@ namespace TwoRadarMaps
                     return;
                 }
             }
-            Instance.Logger.LogInfo($"Failed to find valid target for {mapRenderer.name}.");
-            var stack = new System.Diagnostics.StackTrace();
-            foreach (var frame in stack.GetFrames())
-                Instance.Logger.LogInfo($"  {frame.GetMethod().DeclaringType.FullName}.{frame.GetMethod()}");
         }
 
         public static void EnsureAllRenderersHaveValidTargets()
