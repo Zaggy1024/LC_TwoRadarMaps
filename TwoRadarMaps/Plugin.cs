@@ -71,7 +71,7 @@ namespace TwoRadarMaps
             ZoomLevels.SettingChanged += (_, _) => UpdateZoomFactors();
             DefaultZoomLevel = Config.Bind("Zoom", "DefaultLevel", 0, "The zoom factor to select by default. The first zoom level is 0.");
 
-            EnableTeleportCommand = Config.Bind("TeleportCommand", "Enabled", false, "Enable a 'teleport' command in the terminal. A player can be specified to teleport them instead of the target of the terminal's map.");
+            EnableTeleportCommand = Config.Bind("TeleportCommand", "Enabled", false, "Enable an 'activate teleport' command in the terminal. A player can be specified to teleport them instead of the target of the terminal's map.");
             EnableTeleportCommand.SettingChanged += (_, _) => TerminalCommands.Initialize();
 
             Harmony.PatchAll(typeof(PatchTerminal));
