@@ -25,8 +25,6 @@ namespace TwoRadarMaps
             RemoveAddedKeywords();
             Plugin.UpdateZoomFactors();
 
-            var keywordsToAppend = new List<TerminalKeyword>();
-
             if (Plugin.EnableZoom.Value)
             {
                 CycleZoomNode = ScriptableObject.CreateInstance<TerminalNode>();
@@ -67,7 +65,7 @@ namespace TwoRadarMaps
                 zoomVerbKeyword.specialKeywordResult = CycleZoomNode;
 
                 var zoomNounKeyword = FindOrCreateKeyword("Zoom", "zoom", false);
-                var resetVerbKeyword = FindOrCreateKeyword("Reset", "reset", true,
+                FindOrCreateKeyword("Reset", "reset", true,
                     [
                         new CompatibleNoun()
                         {
