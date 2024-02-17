@@ -167,7 +167,7 @@ namespace TwoRadarMaps.Patches
         [HarmonyPatch(nameof(Terminal.CheckForPlayerNameCommand))]
         static IEnumerable<CodeInstruction> TranspileRunTerminalEvents(IEnumerable<CodeInstruction> instructions)
         {
-            var instructionsList = new List<CodeInstruction>(instructions);
+            var instructionsList = instructions.ToList();
             instructionsList.ReplaceMainMapWithTerminalMap();
             return instructionsList;
         }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
@@ -54,7 +55,7 @@ namespace TwoRadarMaps.Compatibility
             var m_Camera_set_orthographicSize = typeof(Camera).GetMethod($"set_{nameof(Camera.orthographicSize)}");
             var m_Plugin_GetZoomOrthographicSize = typeof(Plugin).GetMethod(nameof(Plugin.GetZoomOrthographicSize));
 
-            var instructionsList = new List<CodeInstruction>(instructions);
+            var instructionsList = instructions.ToList();
 
             // Find:
             //   __instance.mapCamera.orthographicSize = [constant]...
