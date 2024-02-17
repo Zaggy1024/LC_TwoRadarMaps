@@ -1,22 +1,27 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
+
 using UnityEngine;
 
 namespace TwoRadarMaps
 {
     public static class TerminalCommands
     {
-        private static bool hasInitialized = false;
         public static TerminalNode CycleZoomNode = null;
         public static TerminalNode ZoomInNode = null;
         public static TerminalNode ZoomOutNode = null;
         public static TerminalNode ResetZoomNode = null;
 
-        public static void Initialize(TerminalNodesList nodes)
+        private static readonly List<TerminalKeyword> newTerminalKeywords = [];
+        private static readonly List<TerminalKeyword> modifiedTerminalKeywords = [];
+
+        public static void Initialize()
         {
-            if (hasInitialized)
+            if (Plugin.Terminal == null)
                 return;
-            hasInitialized = true;
+
+            RemoveAddedKeywords();
+            Plugin.UpdateZoomFactors();
 
             var keywordsToAppend = new List<TerminalKeyword>();
 
@@ -42,27 +47,9 @@ namespace TwoRadarMaps
                 ResetZoomNode.displayText = "";
                 ResetZoomNode.clearPreviousText = true;
 
-                TerminalKeyword GetOrCreateKeyword(string word, bool verb, CompatibleNoun[] compatibleNouns = null)
-                {
-                    TerminalKeyword keyword = nodes.allKeywords.FirstOrDefault(k => k.isVerb == verb && k.word == word);
-                    if (keyword == null)
-                    {
-                        keyword = ScriptableObject.CreateInstance<TerminalKeyword>();
-                        keyword.name = word;
-                        keyword.isVerb = verb;
-                        keyword.word = word.ToLower();
-                        keyword.compatibleNouns = compatibleNouns;
-                        keywordsToAppend.Add(keyword);
-                    }
-                    else
-                    {
-                        keyword.compatibleNouns = keyword.compatibleNouns.Union(compatibleNouns, CompatibleNounComparer.Instance).ToArray();
-                    }
-                    return keyword;
-                }
-                TerminalKeyword inKeyword = GetOrCreateKeyword("In", false);
-                TerminalKeyword outKeyword = GetOrCreateKeyword("Out", false);
-                var zoomVerbKeyword = GetOrCreateKeyword("Zoom", true,
+                TerminalKeyword inKeyword = FindOrCreateKeyword("In", "in", false);
+                TerminalKeyword outKeyword = FindOrCreateKeyword("Out", "out", false);
+                var zoomVerbKeyword = FindOrCreateKeyword("Zoom", "zoom", true,
                     [
                         new CompatibleNoun()
                         {
@@ -77,8 +64,8 @@ namespace TwoRadarMaps
                     ]);
                 zoomVerbKeyword.specialKeywordResult = CycleZoomNode;
 
-                TerminalKeyword zoomNounKeyword = GetOrCreateKeyword("Zoom", false);
-                var resetVerbKeyword = GetOrCreateKeyword("Reset", true,
+                TerminalKeyword zoomNounKeyword = FindOrCreateKeyword("Zoom", "zoom", false);
+                var resetVerbKeyword = FindOrCreateKeyword("Reset", "reset", true,
                     [
                         new CompatibleNoun()
                         {
@@ -87,8 +74,8 @@ namespace TwoRadarMaps
                         },
                     ]);
             }
-            
-            nodes.allKeywords = [.. nodes.allKeywords, .. keywordsToAppend];
+
+            AddNewlyCreatedCommands();
         }
 
         public static bool ProcessNode(TerminalNode node)
@@ -115,20 +102,65 @@ namespace TwoRadarMaps
             }
             return true;
         }
-    }
 
-    public class CompatibleNounComparer : IEqualityComparer<CompatibleNoun>
-    {
-        public static readonly CompatibleNounComparer Instance = new CompatibleNounComparer();
-
-        public bool Equals(CompatibleNoun a, CompatibleNoun b)
+        static void RemoveAddedKeywords()
         {
-            return a.noun == b.noun && a.result == b.result;
+            // Remove references to new keywords.
+            foreach (var keyword in modifiedTerminalKeywords)
+            {
+                if (keyword.compatibleNouns != null)
+                    keyword.compatibleNouns = [.. keyword.compatibleNouns.Where(compatible => !newTerminalKeywords.Contains(compatible.noun))];
+            }
+            modifiedTerminalKeywords.Clear();
+
+            // Remove new keywords.
+            foreach (var keyword in newTerminalKeywords)
+                Object.Destroy(keyword);
+
+            var nodes = Plugin.Terminal.terminalNodes;
+            nodes.allKeywords = [.. nodes.allKeywords.Where(keyword => !newTerminalKeywords.Contains(keyword))];
+
+            newTerminalKeywords.Clear();
         }
 
-        public int GetHashCode(CompatibleNoun noun)
+        static TerminalKeyword FindKeyword(string word, bool verb)
         {
-            return noun.noun.GetHashCode() ^ noun.result.GetHashCode();
+            return Plugin.Terminal.terminalNodes.allKeywords.FirstOrDefault(keyword => keyword.word == word && keyword.isVerb == verb);
+        }
+
+        static CompatibleNoun FindCompatibleNoun(this TerminalKeyword keyword, string noun)
+        {
+            return keyword.compatibleNouns.FirstOrDefault(compatible => compatible.noun.word == noun);
+        }
+
+        static TerminalKeyword FindOrCreateKeyword(string name, string word, bool verb, CompatibleNoun[] compatibleNouns = null)
+        {
+            Plugin.Instance.Logger.LogInfo($"Creating terminal {(verb ? "verb" : "noun")} '{word}' ({name}).");
+            TerminalKeyword keyword = FindKeyword(word, verb);
+            if (keyword == null)
+            {
+                keyword = ScriptableObject.CreateInstance<TerminalKeyword>();
+                keyword.name = name;
+                keyword.isVerb = verb;
+                keyword.word = word;
+                keyword.compatibleNouns = compatibleNouns;
+                newTerminalKeywords.Add(keyword);
+                Plugin.Instance.Logger.LogInfo($"  Keyword was not found, created a new one.");
+            }
+            else
+            {
+                keyword.compatibleNouns = [.. keyword.compatibleNouns ?? [], .. compatibleNouns ?? []];
+                Plugin.Instance.Logger.LogInfo($"  Keyword existed, appended nouns.");
+            }
+
+            modifiedTerminalKeywords.Add(keyword);
+            return keyword;
+        }
+
+        static void AddNewlyCreatedCommands()
+        {
+            var nodes = Plugin.Terminal.terminalNodes;
+            nodes.allKeywords = [.. nodes.allKeywords, .. newTerminalKeywords];
         }
     }
 }

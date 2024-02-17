@@ -15,7 +15,7 @@ namespace TwoRadarMaps.Patches
         public static void AwakePostfix(Terminal __instance)
         {
             Plugin.Terminal = __instance;
-            TerminalCommands.Initialize(__instance.terminalNodes);
+            TerminalCommands.Initialize();
         }
 
         [HarmonyPrefix]
