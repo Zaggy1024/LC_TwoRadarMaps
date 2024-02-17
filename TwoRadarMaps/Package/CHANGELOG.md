@@ -1,3 +1,7 @@
+## Version 1.3.0
+- Added an opt-in `activate teleporter` command to allow teleporting the player that is targeted on the terminal map.
+- The vanilla bug fixes to solve issues with invalid map targets being selected by both maps have been improved, but should function largely the same.
+
 ## Version 1.2.3
 - Added a compatibility patch for EnhancedRadarBooster's to allow the `zoom` command to work with the mod's increased radar booster map range.
 

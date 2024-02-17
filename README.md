@@ -17,6 +17,9 @@ Once enabled, the following commands are available in the terminal:
 - `zoom in` and `zoom out` will stop at the minimum or maximum zoom levels.
 - `reset zoom` will set the zoom level back to the configured default.
 
+### Teleporter command
+The `Enabled` option under `[TeleportCommand]`, which is off by default, adds an `activate teleporter` command to activate the teleporter to bring whatever player is targeted by the terminal's map onboard the ship. A `tp` shorthand is also provided if the commands are enabled.
+
 ## Compatibility:
 Mods that can activate the teleporter to bring people back from the facility will not target the correct player unless they explicitly implement compatibility for TwoRadarMaps.
 
