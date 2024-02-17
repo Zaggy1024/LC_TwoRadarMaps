@@ -1,5 +1,4 @@
-﻿using System;
-using System.Reflection;
+﻿using System.Reflection;
 
 namespace TwoRadarMaps.Patches
 {
@@ -14,6 +13,6 @@ namespace TwoRadarMaps.Patches
         public static readonly FieldInfo f_Plugin_terminalMapScreenUICanvas = typeof(Plugin).GetField(nameof(Plugin.terminalMapScreenUICanvas));
         public static readonly FieldInfo f_Plugin_terminalMapScreenPlayerName = typeof(Plugin).GetField(nameof(Plugin.terminalMapScreenPlayerName));
 
-        public static readonly MethodInfo m_UnityEngine_Object_op_Equality = typeof(UnityEngine.Object).GetMethod("op_Equality", new Type[] { typeof(UnityEngine.Object), typeof(UnityEngine.Object) });
+        public static readonly MethodInfo m_UnityEngine_Object_op_Equality = typeof(UnityEngine.Object).GetMethod("op_Equality", [typeof(UnityEngine.Object), typeof(UnityEngine.Object)]);
     }
 }
