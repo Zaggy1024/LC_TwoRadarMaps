@@ -23,6 +23,8 @@ namespace TwoRadarMaps.Patches
         static IEnumerable<CodeInstruction> MapCameraFocusOnPositionTranspiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
             var instructionsList = instructions.ToList();
+            // By default, this just sets the main map's UI canvas. Instead, ensure that the UI actually attached to
+            // the map renderer's camera has its plane distance set to match the near clip plane.
             instructionsList.InsertTerminalField(generator, new CodeInstruction(OpCodes.Ldarg_0), Reflection.f_StartOfRound_radarCanvas, Reflection.f_Plugin_terminalMapScreenUICanvas);
             return instructionsList;
         }
