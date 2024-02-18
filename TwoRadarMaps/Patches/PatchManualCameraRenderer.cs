@@ -7,7 +7,7 @@ using HarmonyLib;
 namespace TwoRadarMaps.Patches
 {
     [HarmonyPatch(typeof(ManualCameraRenderer))]
-    internal class PatchManualCameraRenderer
+    internal static class PatchManualCameraRenderer
     {
         [HarmonyPatch(nameof(ManualCameraRenderer.updateMapTarget), MethodType.Enumerator)]
         [HarmonyTranspiler]

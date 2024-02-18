@@ -8,7 +8,7 @@ using UnityEngine;
 namespace TwoRadarMaps.Patches
 {
     [HarmonyPatch(typeof(Terminal))]
-    internal class PatchTerminal
+    internal static class PatchTerminal
     {
         [HarmonyPostfix]
         [HarmonyPatch(nameof(Terminal.Awake))]

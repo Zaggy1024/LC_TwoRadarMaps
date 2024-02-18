@@ -6,7 +6,7 @@ using TwoRadarMaps.Compatibility;
 namespace TwoRadarMaps.Patches
 {
     [HarmonyPatch(typeof(PlayerControllerB))]
-    internal class PatchPlayerControllerB
+    internal static class PatchPlayerControllerB
     {
         [HarmonyFinalizer]
         [HarmonyPatch(nameof(PlayerControllerB.ConnectClientToPlayerObject))]
