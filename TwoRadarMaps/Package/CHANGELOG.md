@@ -1,3 +1,8 @@
+## Version 1.3.2
+- Fix placeholder names like `Player #0` appearing in the Terminal when connected to Steam.
+- Display transition animations for changes in targets when radar boosters are added and removed again.
+- Various improvements to vanilla bug fixes for the edge cases that necessitate changing map targets.
+
 ## Version 1.3.1
 - Add descriptions for all commands under the `other` help category.
 - Remove some debug spam that would occur when teleporting players from the terminal.
