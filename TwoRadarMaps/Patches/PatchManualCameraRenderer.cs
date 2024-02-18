@@ -31,21 +31,21 @@ namespace TwoRadarMaps.Patches
         [HarmonyPostfix]
         static void ChangeNameOfTargetTransformPostfix(ManualCameraRenderer __instance)
         {
-            Plugin.EnsureAllRenderersHaveValidTargets();
+            Plugin.EnsureAllMapRenderersHaveValidTargets();
         }
 
         [HarmonyPatch(nameof(ManualCameraRenderer.AddTransformAsTargetToRadar))]
         [HarmonyPostfix]
         static void AddTransformAsTargetToRadarPostfix(ManualCameraRenderer __instance)
         {
-            Plugin.EnsureAllRenderersHaveValidTargets();
+            Plugin.EnsureAllMapRenderersHaveValidTargets();
         }
 
         [HarmonyPatch(nameof(ManualCameraRenderer.RemoveTargetFromRadar))]
         [HarmonyPostfix]
         static void RemoveTargetFromRadarPostfix(ManualCameraRenderer __instance)
         {
-            Plugin.EnsureAllRenderersHaveValidTargets();
+            Plugin.EnsureAllMapRenderersHaveValidTargets();
         }
 
         [HarmonyPatch(nameof(ManualCameraRenderer.SyncOrderOfRadarBoostersInList))]

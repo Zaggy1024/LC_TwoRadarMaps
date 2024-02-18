@@ -13,7 +13,7 @@ namespace TwoRadarMaps.Patches
         [HarmonyAfter(OpenBodyCamsCompatibility.MOD_ID)]
         static void ConnectClientToPlayerObjectPostfix()
         {
-            Plugin.EnsureAllRenderersHaveValidTargets();
+            Plugin.EnsureAllMapRenderersHaveValidTargets();
             Plugin.UpdateZoomFactors();
 
             OpenBodyCamsCompatibility.InitializeAtStartOfGame();
@@ -23,7 +23,7 @@ namespace TwoRadarMaps.Patches
         [HarmonyPatch(nameof(PlayerControllerB.SendNewPlayerValuesClientRpc))]
         static void SendNewPlayerValuesClientRpcPostfix(ref PlayerControllerB __instance)
         {
-            Plugin.EnsureAllRenderersHaveValidTargets();
+            Plugin.EnsureAllMapRenderersHaveValidTargets();
         }
     }
 }

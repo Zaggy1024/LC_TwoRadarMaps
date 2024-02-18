@@ -155,7 +155,7 @@ namespace TwoRadarMaps
             }
         }
 
-        public static void EnsureAllRenderersHaveValidTargets()
+        public static void EnsureAllMapRenderersHaveValidTargets()
         {
             EnsureMapRendererHasValidTarget(StartOfRound.Instance.mapScreen);
             EnsureMapRendererHasValidTarget(TerminalMapRenderer);
