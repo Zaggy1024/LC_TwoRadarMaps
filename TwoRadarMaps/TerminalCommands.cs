@@ -190,12 +190,19 @@ namespace TwoRadarMaps
         {
             var node = FindKeyword(category, verb: false).specialKeywordResult;
             var text = new StringBuilder(word.Length + description.Length + 5)
-                .Append(">").AppendLine(word)
-                .AppendLine(description)
-                .AppendLine()
+                .Append(">").Append(word).Append("\n")
+                .Append(description)
+                .Append("\n\n")
                 .ToString();
-            node.displayText += text;
             appendedDescriptions.Add((node, text));
+            if (node.displayText.EndsWith("\n\n\n"))
+                node.displayText = node.displayText.Insert(node.displayText.Length - 1, text);
+            else
+                node.displayText += text;
+        }
+
+        static void RemoveCommandDescription(TerminalNode category, string text)
+        {
         }
 
         static void RemoveAddedKeywords()
@@ -218,10 +225,10 @@ namespace TwoRadarMaps
             newTerminalKeywords.Clear();
 
             // Remove command descriptions.
-            foreach (var (node, description) in appendedDescriptions)
+            foreach (var (category, text) in appendedDescriptions)
             {
-                var index = node.displayText.IndexOf(description);
-                node.displayText = node.displayText.Remove(index, description.Length);
+                var index = category.displayText.IndexOf(text);
+                category.displayText = category.displayText.Remove(index, text.Length);
             }
 
             appendedDescriptions.Clear();
