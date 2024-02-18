@@ -166,12 +166,6 @@ namespace TwoRadarMaps
             EnsureMapRendererHasValidTarget(TerminalMapRenderer);
         }
 
-        public static void UpdateTerminalMapTargetList()
-        {
-            TerminalMapRenderer.radarTargets = StartOfRound.Instance.mapScreen.radarTargets;
-            EnsureMapRendererHasValidTarget(TerminalMapRenderer);
-        }
-
         public static void UpdateZoomFactors(string factors)
         {
             try

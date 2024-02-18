@@ -159,6 +159,15 @@ namespace TwoRadarMaps.Patches
             Plugin.TerminalMapRenderer.cam.enabled = false;
 
             Plugin.Terminal.terminalUIScreen.gameObject.AddComponent<TerminalVisibilityTracker>();
+
+            // Vanilla bugfix: When radar boosters are added to the targets list, the list is sorted by NetworkObject.NetworkObjectId.
+            // However, players aren't initially ordered according to this field, so switching targets after activating a radar booster
+            // will either select the same target again or change to a player out of order.
+            //
+            // Calling this will also trigger our postfix to make the terminal map renderer reference the targets list
+            // in the main map.
+            mainMapRenderer.SyncOrderOfRadarBoostersInList();
+            Plugin.UpdateZoomFactors();
         }
 
         [HarmonyTranspiler]

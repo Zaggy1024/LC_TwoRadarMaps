@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
 
 using HarmonyLib;
@@ -9,6 +10,8 @@ namespace TwoRadarMaps.Patches
     [HarmonyPatch(typeof(ManualCameraRenderer))]
     internal static class PatchManualCameraRenderer
     {
+        private static readonly FieldInfo f_ManualCameraRenderer_radarTargets = typeof(ManualCameraRenderer).GetField(nameof(ManualCameraRenderer.radarTargets));
+
         [HarmonyPatch(nameof(ManualCameraRenderer.updateMapTarget), MethodType.Enumerator)]
         [HarmonyTranspiler]
         static IEnumerable<CodeInstruction> updateMapTargetTranspiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
@@ -51,10 +54,43 @@ namespace TwoRadarMaps.Patches
         }
 
         [HarmonyPatch(nameof(ManualCameraRenderer.SyncOrderOfRadarBoostersInList))]
-        [HarmonyPostfix]
-        static void SyncOrderOfRadarBoostersInListPostfix(ManualCameraRenderer __instance)
+        [HarmonyTranspiler]
+        private static IEnumerable<CodeInstruction> SyncOrderOfRadarBoostersInListPostfix(IEnumerable<CodeInstruction> instructions)
         {
-            Plugin.UpdateTerminalMapTargetList();
+            // Patch the SyncOrderOfRadarBoostersInList function to both set the radarTargets field for both maps, and
+            // check whether their current targets have changed to ensure that they are valid and update the displayed names.
+            // - radarTargets = ...;
+            // + ApplySortedTargets(...);
+            foreach (var instruction in instructions)
+            {
+                if (instruction.StoresField(f_ManualCameraRenderer_radarTargets))
+                    yield return new CodeInstruction(OpCodes.Call, typeof(PatchManualCameraRenderer).GetMethod(nameof(ApplySortedTargets), BindingFlags.NonPublic | BindingFlags.Static, [typeof(ManualCameraRenderer), typeof(List<TransformAndName>)]));
+                else
+                    yield return instruction;
+            }
+        }
+
+        private static void OnTargetListResorted(ManualCameraRenderer mapRenderer, List<TransformAndName> sortedTargets)
+        {
+            var initialIndex = mapRenderer.targetTransformIndex;
+
+            if (mapRenderer.radarTargets[initialIndex] == sortedTargets[initialIndex])
+                return;
+
+            mapRenderer.radarTargets = sortedTargets;
+            var validTargetIndex = Plugin.GetNextValidTarget(sortedTargets, initialIndex);
+            if (validTargetIndex == -1)
+                return;
+
+            Plugin.StartTargetTransition(mapRenderer, validTargetIndex);
+        }
+
+        private static void ApplySortedTargets(ManualCameraRenderer _, List<TransformAndName> sortedTargets)
+        {
+            OnTargetListResorted(StartOfRound.Instance.mapScreen, sortedTargets);
+            OnTargetListResorted(Plugin.TerminalMapRenderer, sortedTargets);
+            StartOfRound.Instance.mapScreen.radarTargets = sortedTargets;
+            Plugin.TerminalMapRenderer.radarTargets = sortedTargets;
         }
     }
 }
