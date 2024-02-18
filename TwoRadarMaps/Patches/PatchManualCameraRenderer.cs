@@ -68,10 +68,85 @@ namespace TwoRadarMaps.Patches
         }
 
         [HarmonyPatch(nameof(ManualCameraRenderer.RemoveTargetFromRadar))]
-        [HarmonyPostfix]
-        static void RemoveTargetFromRadarPostfix(ManualCameraRenderer __instance)
+        [HarmonyTranspiler]
+        static IEnumerable<CodeInstruction> RemoveTargetFromRadarTranspiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
-            Plugin.EnsureAllMapRenderersHaveValidTargets();
+            var m_List_RemoveAt = typeof(List<TransformAndName>).GetMethod(nameof(List<TransformAndName>.RemoveAt), [typeof(int)]);
+
+            var f_ManualCameraRenderer_targetTransformIndex = typeof(ManualCameraRenderer).GetField(nameof(ManualCameraRenderer.targetTransformIndex));
+            var m_List_Count = typeof(List<TransformAndName>).GetMethod("get_Count");
+
+            var m_ManualCameraRenderer_SwitchRadarTargetForward = typeof(ManualCameraRenderer).GetMethod(nameof(ManualCameraRenderer.SwitchRadarTargetForward), [typeof(bool)]);
+
+            var instructionsList = instructions.ToList();
+
+            var loadRadarTarget = instructionsList.FindIndexOfSequence(new System.Predicate<CodeInstruction>[]{
+                insn => insn.LoadsField(f_ManualCameraRenderer_radarTargets),
+                insn => insn.IsLdloc(),
+                insn => insn.Calls(m_List_RemoveAt),
+            });
+            var loadRadarTargetIndexInsn = instructionsList[loadRadarTarget.Start + 1];
+
+            // RemoveTargetFromRadar() calls SwitchRadarTargetForward(callRPC: false), where the 'callRPC' set to true tells it
+            // not to scan through all targets for a valid target. Since a valid target was just removed, we need to do that.
+            // However, if we call it with 'callRPC' set to true instead, then it will send a packet telling every client that
+            // the target has changed. If we instead only run this on the host, then we will delay updating the target, and
+            // clients will see the invalid target for longer.
+            //
+            // Instead, call a method that immediately scans for a valid target.
+            //
+            // Apply this patch:
+            //   radarTargets.RemoveAt(i);
+            // - if (targetTransformIndex >= radarTargets.Count)
+            // - {
+            // -     targetTransformIndex--;
+            // -     SwitchRadarTargetForward(callRPC: false);
+            // - }
+            // + PatchManualCameraRenderer.RadarTargetWasRemoved(i);
+            var targetIsOutOfBoundsCheck = instructionsList.FindIndexOfSequence(
+                [
+                    insn => insn.IsLdarg(0),
+                    insn => insn.LoadsField(f_ManualCameraRenderer_targetTransformIndex),
+                    insn => insn.IsLdarg(0),
+                    insn => insn.LoadsField(f_ManualCameraRenderer_radarTargets),
+                    insn => insn.Calls(m_List_Count),
+                    insn => insn.opcode == OpCodes.Blt || insn.opcode == OpCodes.Blt_S,
+                ]);
+            var targetIsInBoundsLabel = (Label)instructionsList[targetIsOutOfBoundsCheck.End - 1].operand;
+            var targetIsOutOfBoundsBlockEnd = instructionsList.FindIndex(targetIsOutOfBoundsCheck.End, insn => insn.labels.Contains(targetIsInBoundsLabel));
+
+            instructionsList.RemoveAbsoluteRange(targetIsOutOfBoundsCheck.Start, targetIsOutOfBoundsBlockEnd);
+            instructionsList.InsertRange(targetIsOutOfBoundsCheck.Start,
+                [
+                    new CodeInstruction(loadRadarTargetIndexInsn),
+                    new CodeInstruction(OpCodes.Call, typeof(PatchManualCameraRenderer).GetMethod(nameof(RadarTargetWasRemoved), BindingFlags.NonPublic | BindingFlags.Static, [typeof(int)])).WithLabels(targetIsInBoundsLabel),
+                ]);
+
+            return instructionsList;
+        }
+
+        private static void FixUpRadarTargetRemovalFor(ManualCameraRenderer mapRenderer, int removedIndex)
+        {
+            var targetChanged = removedIndex <= mapRenderer.targetTransformIndex;
+
+            if (mapRenderer.targetTransformIndex >= mapRenderer.radarTargets.Count)
+                mapRenderer.targetTransformIndex--;
+
+            var validTargetIndex = Plugin.GetNextValidTarget(mapRenderer.radarTargets, mapRenderer.targetTransformIndex);
+            if (validTargetIndex == -1)
+            {
+                mapRenderer.targetedPlayer = null;
+                return;
+            }
+
+            if (targetChanged)
+                Plugin.StartTargetTransition(mapRenderer, validTargetIndex);
+        }
+
+        private static void RadarTargetWasRemoved(int removedIndex)
+        {
+            FixUpRadarTargetRemovalFor(StartOfRound.Instance.mapScreen, removedIndex);
+            FixUpRadarTargetRemovalFor(Plugin.TerminalMapRenderer, removedIndex);
         }
 
         [HarmonyPatch(nameof(ManualCameraRenderer.SyncOrderOfRadarBoostersInList))]
