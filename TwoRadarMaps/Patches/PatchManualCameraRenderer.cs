@@ -33,17 +33,38 @@ namespace TwoRadarMaps.Patches
         }
 
         [HarmonyPatch(nameof(ManualCameraRenderer.ChangeNameOfTargetTransform))]
-        [HarmonyPostfix]
-        static void ChangeNameOfTargetTransformPostfix(ManualCameraRenderer __instance)
+        [HarmonyTranspiler]
+        static IEnumerable<CodeInstruction> ChangeNameOfTargetTransformPostfix(IEnumerable<CodeInstruction> instructions)
         {
-            Plugin.EnsureAllMapRenderersHaveValidTargets();
+            var f_TransformAndName_name = typeof(TransformAndName).GetField(nameof(TransformAndName.name));
+
+            var instructionsList = instructions.ToList();
+
+            // Play a transition and apply the new name when a matching transform is found.
+            //   radarTargets[i].name = newName;
+            // + OnTargetChanged(i);
+            var storeNewName = instructionsList.FindIndex(insn => insn.StoresField(f_TransformAndName_name));
+            var getRadarTarget = instructionsList.InstructionRangeForStackItems(storeNewName, 1, 1);
+            var targetIndex = instructionsList.InstructionRangeForStackItems(getRadarTarget.End - 1, 0, 0);
+            instructionsList.InsertRange(storeNewName + 1,
+                [
+                    .. instructionsList.GetRangeView(targetIndex),
+                    new CodeInstruction(OpCodes.Call, typeof(PatchManualCameraRenderer).GetMethod(nameof(OnTargetNameChanged), BindingFlags.NonPublic | BindingFlags.Static, [typeof(int)])),
+                ]);
+
+            return instructionsList;
         }
 
-        [HarmonyPatch(nameof(ManualCameraRenderer.AddTransformAsTargetToRadar))]
-        [HarmonyPostfix]
-        static void AddTransformAsTargetToRadarPostfix(ManualCameraRenderer __instance)
+        private static void ApplyTargetNameChange(ManualCameraRenderer mapRenderer, int targetIndex)
         {
-            Plugin.EnsureAllMapRenderersHaveValidTargets();
+            if (targetIndex == mapRenderer.targetTransformIndex)
+                Plugin.StartTargetTransition(mapRenderer, mapRenderer.targetTransformIndex);
+        }
+
+        private static void OnTargetNameChanged(int targetIndex)
+        {
+            ApplyTargetNameChange(StartOfRound.Instance.mapScreen, targetIndex);
+            ApplyTargetNameChange(Plugin.TerminalMapRenderer, targetIndex);
         }
 
         [HarmonyPatch(nameof(ManualCameraRenderer.RemoveTargetFromRadar))]

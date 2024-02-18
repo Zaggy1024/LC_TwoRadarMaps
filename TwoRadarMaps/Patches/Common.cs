@@ -80,6 +80,17 @@ namespace TwoRadarMaps.Patches
             list.RemoveAbsoluteRange(range.Start, range.End);
         }
 
+        public static IEnumerable<T> GetAbsoluteRangeView<T>(this List<T> list, int start, int end)
+        {
+            for (var i = start; i < end; i++)
+                yield return list[i];
+        }
+
+        public static IEnumerable<T> GetRangeView<T>(this List<T> list, SequenceMatch range)
+        {
+            return list.GetAbsoluteRangeView(range.Start, range.End);
+        }
+
         public static SequenceMatch FindIndexOfSequence<T>(this List<T> list, int startIndex, IEnumerable<Predicate<T>> predicates)
         {
             var index = startIndex;
