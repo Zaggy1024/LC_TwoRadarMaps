@@ -20,7 +20,7 @@ namespace TwoRadarMaps.Patches
 
         [HarmonyPostfix]
         [HarmonyPatch(nameof(PlayerControllerB.SendNewPlayerValuesClientRpc))]
-        static void SendNewPlayerValuesClientRpcPostfix(ref PlayerControllerB __instance)
+        static void SendNewPlayerValuesClientRpcPostfix()
         {
             Plugin.EnsureAllMapRenderersHaveValidTargets();
         }
