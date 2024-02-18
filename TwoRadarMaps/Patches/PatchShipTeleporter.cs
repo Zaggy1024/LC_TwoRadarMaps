@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -19,7 +19,7 @@ namespace TwoRadarMaps.Patches
         public static readonly MethodInfo m_WriteCurrentTarget = typeof(PatchShipTeleporter).GetMethod(nameof(WriteCurrentTargetIndex), BindingFlags.NonPublic | BindingFlags.Static, [typeof(FastBufferWriter)]);
         public static readonly MethodInfo m_ReadTargetIndexAndSet = typeof(PatchShipTeleporter).GetMethod(nameof(ReadTargetIndexAndSet), BindingFlags.NonPublic | BindingFlags.Static, [typeof(FastBufferReader)]);
 
-        public static readonly MethodInfo m_Plugin_SetTargetIndex = typeof(Plugin).GetMethod(nameof(Plugin.SetTargetIndex), BindingFlags.NonPublic | BindingFlags.Static, [typeof(ManualCameraRenderer), typeof(int), typeof(bool)]);
+        public static readonly MethodInfo m_Plugin_SetTargetIndex = typeof(Plugin).GetMethod(nameof(Plugin.SetTargetIndex), BindingFlags.NonPublic | BindingFlags.Static, [typeof(ManualCameraRenderer), typeof(int)]);
 
         public static readonly MethodInfo m_ShipTeleporter_PressTeleportButtonServerRpcHandler = typeof(ShipTeleporter).GetMethod(nameof(ShipTeleporter.__rpc_handler_389447712), BindingFlags.NonPublic | BindingFlags.Static, [typeof(NetworkBehaviour), typeof(FastBufferReader), typeof(__RpcParams)]);
         public static readonly MethodInfo m_ShipTeleporter_PressTeleportButtonClientRpc = typeof(ShipTeleporter).GetMethod(nameof(ShipTeleporter.PressTeleportButtonClientRpc), []);
@@ -141,7 +141,6 @@ namespace TwoRadarMaps.Patches
                 new CodeInstruction(OpCodes.Call, Reflection.m_StartOfRound_Instance),
                 new CodeInstruction(OpCodes.Ldfld, Reflection.f_StartOfRound_mapScreen),
                 new CodeInstruction(OpCodes.Ldloc, originalIndexVar),
-                new CodeInstruction(OpCodes.Ldc_I4_0),
                 new CodeInstruction(OpCodes.Call, m_Plugin_SetTargetIndex),
             ];
             instructionsList.InsertRange(endListeningBlock, insertAtEnd);
@@ -154,7 +153,7 @@ namespace TwoRadarMaps.Patches
             var mapRenderer = StartOfRound.Instance.mapScreen;
             var oldIndex = mapRenderer.targetTransformIndex;
             reader.ReadValue(out int targetIndex);
-            Plugin.SetTargetIndex(mapRenderer, targetIndex, setText: false);
+            Plugin.SetTargetIndex(mapRenderer, targetIndex);
             return oldIndex;
         }
     }

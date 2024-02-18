@@ -1,4 +1,4 @@
-﻿using GameNetcodeStuff;
+using GameNetcodeStuff;
 using HarmonyLib;
 
 using TwoRadarMaps.Compatibility;
@@ -14,7 +14,6 @@ namespace TwoRadarMaps.Patches
         static void ConnectClientToPlayerObjectPostfix()
         {
             Plugin.EnsureAllMapRenderersHaveValidTargets();
-            Plugin.UpdateZoomFactors();
 
             OpenBodyCamsCompatibility.InitializeAtStartOfGame();
         }

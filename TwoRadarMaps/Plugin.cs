@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Globalization;
 
@@ -123,36 +124,40 @@ namespace TwoRadarMaps
             return player.isPlayerControlled || player.isPlayerDead || player.redirectToEnemy != null;
         }
 
-        internal static void SetTargetIndex(ManualCameraRenderer mapRenderer, int targetIndex, bool setText = true)
+        internal static void SetTargetIndex(ManualCameraRenderer mapRenderer, int targetIndex)
         {
             if (targetIndex >= mapRenderer.radarTargets.Count)
                 return;
 
             mapRenderer.targetTransformIndex = targetIndex;
             mapRenderer.targetedPlayer = mapRenderer.radarTargets[targetIndex].transform.GetComponent<PlayerControllerB>();
+        }
 
-            if (!setText)
-                return;
+        internal static int GetNextValidTarget(List<TransformAndName> targets, int initialIndex)
+        {
+            var targetCount = targets.Count;
+            for (int i = 0; i < targetCount; i++)
+            {
+                var targetIndex = (initialIndex + i) % targetCount;
+                if (TargetIsValid(targets[targetIndex]?.transform))
+                    return targetIndex;
+            }
+            return -1;
+        }
 
-            var monitoringText = "MONITORING: " + mapRenderer.radarTargets[targetIndex].name;
-            if (mapRenderer == TerminalMapRenderer)
-                TerminalMapScreenPlayerName.text = monitoringText;
-            else
-                StartOfRound.Instance.mapScreenPlayerName.text = monitoringText;
+        internal static void StartTargetTransition(ManualCameraRenderer mapRenderer, int targetIndex)
+        {
+            if (mapRenderer.updateMapCameraCoroutine != null)
+                mapRenderer.StopCoroutine(mapRenderer.updateMapCameraCoroutine);
+            mapRenderer.updateMapCameraCoroutine = mapRenderer.StartCoroutine(mapRenderer.updateMapTarget(targetIndex));
         }
 
         internal static void EnsureMapRendererHasValidTarget(ManualCameraRenderer mapRenderer)
         {
-            var targetCount = mapRenderer.radarTargets.Count;
-            for (int i = 0; i < targetCount; i++)
-            {
-                var targetIndex = (mapRenderer.targetTransformIndex + i) % targetCount;
-                if (TargetIsValid(mapRenderer.radarTargets[targetIndex]?.transform))
-                {
-                    SetTargetIndex(mapRenderer, targetIndex);
-                    return;
-                }
-            }
+            var targetIndex = GetNextValidTarget(mapRenderer.radarTargets, mapRenderer.targetTransformIndex);
+            if (targetIndex == -1)
+                return;
+            StartTargetTransition(mapRenderer, targetIndex);
         }
 
         public static void EnsureAllMapRenderersHaveValidTargets()
@@ -235,9 +240,9 @@ namespace TwoRadarMaps
             }
 
             var oldIndex = mapRenderer.targetTransformIndex;
-            SetTargetIndex(mapRenderer, targetIndex, setText: false);
+            SetTargetIndex(mapRenderer, targetIndex);
             Teleporter.PressTeleportButtonOnLocalClient();
-            SetTargetIndex(mapRenderer, oldIndex, setText: false);
+            SetTargetIndex(mapRenderer, oldIndex);
         }
     }
 }
