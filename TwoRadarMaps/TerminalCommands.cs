@@ -75,8 +75,8 @@ namespace TwoRadarMaps
                         },
                     ]);
 
-                AddCommandDescription("other", "ZOOM", "Cycle through zoom levels on the map. Specify direction with 'in' and 'out'.");
-                AddCommandDescription("other", "RESET ZOOM", "Reset the map's zoom level to the default.");
+                AddCommandDescription("other", "ZOOM", "Cycle through zoom levels on the map. Specify direction with 'IN' and 'OUT'.\n" +
+                    "The 'RESET ZOOM' command will set the zoom back to the default level.");
             }
 
             if (Plugin.EnableTeleportCommand.Value)
