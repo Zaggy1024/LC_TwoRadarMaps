@@ -95,16 +95,16 @@ namespace TwoRadarMaps
                         }
                     ]);
 
-                var shorthandDescription = "";
+                var shorthandAppend = "";
 
                 if (Plugin.EnableTeleportCommandShorthand.Value)
                 {
                     var teleportShorthandKeyword = FindOrCreateKeyword("TeleportShorthand", "tp", true);
                     teleportShorthandKeyword.specialKeywordResult = TeleportNode;
-                    shorthandDescription = " The shorthand 'TP' can be used.";
+                    shorthandAppend = "/TP";
                 }
 
-                AddCommandDescription("other", "ACTIVATE TELEPORTER", "Activate the teleporter to beam the player monitored on the map into the ship." + shorthandDescription);
+                AddCommandDescription("other", "ACTIVATE TELEPORTER" + shorthandAppend, "Activate the teleporter to beam the player monitored on the map into the ship.");
             }
 
             AddNewlyCreatedCommands();
