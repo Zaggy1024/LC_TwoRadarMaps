@@ -228,6 +228,12 @@ namespace TwoRadarMaps
             foreach (var (category, text) in appendedDescriptions)
             {
                 var index = category.displayText.IndexOf(text);
+                if (index == -1)
+                {
+                    Plugin.Instance.Logger.LogError($"Could not find command description text in {category.name} to remove it:");
+                    Plugin.Instance.Logger.LogError(text);
+                    continue;
+                }
                 category.displayText = category.displayText.Remove(index, text.Length);
             }
 
