@@ -1,3 +1,7 @@
+## Version 1.3.3
+- Fixed line spacing of the command descriptions.
+- Fixed an error that could lock players into the terminal with SellFromTerminal installed.
+
 ## Version 1.3.2
 - Fixed placeholder names like `Player #0` appearing in the Terminal when connected to Steam.
 - Displayed transition animations for changes in targets when radar boosters are added and removed again.
