@@ -1,3 +1,7 @@
+## Version 1.3.4
+- Fixed a vanilla bug that caused players' usernames to be desynced on the map.
+- Fixed an issue where the main map target would be desynced on initial join to a lobby.
+
 ## Version 1.3.3
 - Fixed line spacing of the command descriptions.
 - Fixed an error that could lock players into the terminal with SellFromTerminal installed.
