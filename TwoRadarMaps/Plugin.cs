@@ -79,9 +79,8 @@ namespace TwoRadarMaps
             EnableTeleportCommandShorthand.SettingChanged += (_, _) => TerminalCommands.Initialize();
 
             Harmony.PatchAll(typeof(PatchTerminal));
-            Harmony.PatchAll(typeof(PatchStartOfRound));
+            Harmony.PatchAll(typeof(PatchVanillaBugs));
             Harmony.PatchAll(typeof(PatchManualCameraRenderer));
-            Harmony.PatchAll(typeof(PatchPlayerControllerB));
             Harmony.PatchAll(typeof(PatchShipTeleporter));
 
             // Enable each map's night vision light only when rendering that map camera.
