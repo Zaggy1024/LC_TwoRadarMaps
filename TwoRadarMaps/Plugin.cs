@@ -79,6 +79,7 @@ namespace TwoRadarMaps
             EnableTeleportCommandShorthand.SettingChanged += (_, _) => TerminalCommands.Initialize();
 
             Harmony.PatchAll(typeof(PatchTerminal));
+            Harmony.PatchAll(typeof(PatchStartOfRound));
             Harmony.PatchAll(typeof(PatchManualCameraRenderer));
             Harmony.PatchAll(typeof(PatchPlayerControllerB));
             Harmony.PatchAll(typeof(PatchShipTeleporter));
