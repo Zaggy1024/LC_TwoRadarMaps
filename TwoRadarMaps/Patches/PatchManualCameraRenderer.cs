@@ -36,14 +36,12 @@ namespace TwoRadarMaps.Patches
         [HarmonyTranspiler]
         static IEnumerable<CodeInstruction> ChangeNameOfTargetTransformPostfix(IEnumerable<CodeInstruction> instructions)
         {
-            var f_TransformAndName_name = typeof(TransformAndName).GetField(nameof(TransformAndName.name));
-
             var instructionsList = instructions.ToList();
 
             // Play a transition and apply the new name when a matching transform is found.
             //   radarTargets[i].name = newName;
             // + OnTargetChanged(i);
-            var storeNewName = instructionsList.FindIndex(insn => insn.StoresField(f_TransformAndName_name));
+            var storeNewName = instructionsList.FindIndex(insn => insn.StoresField(Reflection.f_TransformAndName_name));
             var getRadarTarget = instructionsList.InstructionRangeForStackItems(storeNewName, 1, 1);
             var targetIndex = instructionsList.InstructionRangeForStackItems(getRadarTarget.End - 1, 0, 0);
             instructionsList.InsertRange(storeNewName + 1,
