@@ -1,3 +1,6 @@
+## Version 1.3.5
+- Prevent a conflict with LobbyControl by detect if it has already patched updating of players' usernames on the map.
+
 ## Version 1.3.4
 - Fixed a vanilla bug that caused players' usernames to be desynced on the map.
 - Fixed an issue where the main map target would be desynced on initial join to a lobby.
