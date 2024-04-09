@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -6,6 +6,7 @@ using System.Reflection.Emit;
 
 using GameNetcodeStuff;
 using HarmonyLib;
+using UnityEngine;
 
 using TwoRadarMaps.Compatibility;
 
@@ -45,35 +46,47 @@ namespace TwoRadarMaps.Patches
         [HarmonyPatch(typeof(PlayerControllerB), nameof(PlayerControllerB.SendNewPlayerValuesClientRpc))]
         static IEnumerable<CodeInstruction> SendNewPlayerValuesClientRpcTranspiler(IEnumerable<CodeInstruction> instructions)
         {
+            var m_ManualCameraRenderer_ChangeNameOfTargetTransform = typeof(ManualCameraRenderer).GetMethod(nameof(ManualCameraRenderer.ChangeNameOfTargetTransform), [typeof(Transform), typeof(string)]);
+
             var instructionsList = instructions.ToList();
 
             // Correct the radar target index, otherwise the re-sorted list will cause names to be mismatched with their
             // transforms.
             // - StartOfRound.Instance.mapScreen.radarTargets[i].name = playerName;
-            // + StartOfRound.Instance.mapScreen.radarTargets[GetTransformIndexForPlayerIndex(i)].name = playerName;
+            // + StartOfRound.Instance.mapScreen.ChangeNameOfTargetTransform(StartOfRound.Instance.allPlayerScripts[i].transform, playerName);
             var setName = instructionsList.FindIndex(insn => insn.StoresField(Reflection.f_TransformAndName_name));
             var getTransformAndName = instructionsList.InstructionRangeForStackItems(setName, 1, 1);
-            var transformIndex = instructionsList.InstructionRangeForStackItems(getTransformAndName.End - 1, 0, 0);
-            instructionsList.Insert(transformIndex.End, new CodeInstruction(OpCodes.Call, typeof(PatchVanillaBugs).GetMethod(nameof(GetTransformIndexForPlayerIndex), BindingFlags.NonPublic | BindingFlags.Static)));
 
-            // Insert a call to UpdateMonitoredPlayerNames() before the function ends.
-            instructionsList.Insert(instructionsList.Count - 1, new CodeInstruction(OpCodes.Call, typeof(PatchVanillaBugs).GetMethod(nameof(UpdateMonitoredPlayerNames), BindingFlags.NonPublic | BindingFlags.Static)));
+            var loadTransformIndex = instructionsList.InstructionRangeForStackItems(getTransformAndName.End - 1, 0, 0);
+
+            instructionsList.RemoveAt(setName);
+            instructionsList.RemoveAbsoluteRange(loadTransformIndex.End, getTransformAndName.End);
+            instructionsList.RemoveAbsoluteRange(getTransformAndName.Start, loadTransformIndex.Start);
+
+            var insertionIndex = getTransformAndName.Start;
+            CodeInstruction[] loadPlayerScriptsInstructions = [
+                new CodeInstruction(OpCodes.Call, Reflection.m_StartOfRound_Instance),
+                new CodeInstruction(OpCodes.Ldfld, Reflection.f_StartOfRound_allPlayerScripts),
+            ];
+            instructionsList.InsertRange(insertionIndex, loadPlayerScriptsInstructions);
+            insertionIndex += loadPlayerScriptsInstructions.Length;
+            insertionIndex += loadTransformIndex.Size;
+
+            CodeInstruction[] loadPlayerTransformInstructions = [
+                new CodeInstruction(OpCodes.Ldelem, typeof(PlayerControllerB)),
+                new CodeInstruction(OpCodes.Call, Reflection.m_Component_Transform),
+            ];
+            instructionsList.InsertRange(insertionIndex, loadPlayerTransformInstructions);
+            insertionIndex += loadPlayerTransformInstructions.Length;
+            insertionIndex += setName - getTransformAndName.End;
+
+            instructionsList.InsertRange(insertionIndex, [
+                new CodeInstruction(OpCodes.Call, Reflection.m_StartOfRound_Instance),
+                new CodeInstruction(OpCodes.Ldfld, Reflection.f_StartOfRound_mapScreen),
+                new CodeInstruction(OpCodes.Call, m_ManualCameraRenderer_ChangeNameOfTargetTransform)
+            ]);
 
             return instructionsList;
-        }
-
-        private static int GetTransformIndexForPlayerIndex(int index)
-        {
-            var playerTransform = StartOfRound.Instance.allPlayerScripts[index].transform;
-            var targetTransforms = StartOfRound.Instance.mapScreen.radarTargets;
-            for (int i = 0; i < targetTransforms.Count; i++)
-            {
-                if (targetTransforms[i].transform == playerTransform)
-                    return i;
-            }
-
-            Plugin.Instance.Logger.LogError($"Player script #{index} was not found in the map's target list!\n{new StackTrace()}");
-            return 0;
         }
 
         private static void UpdateMonitoredPlayerNames()

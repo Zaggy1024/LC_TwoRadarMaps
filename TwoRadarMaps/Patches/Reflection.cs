@@ -1,10 +1,15 @@
-﻿using System.Reflection;
+using System.Reflection;
+
+using UnityEngine;
 
 namespace TwoRadarMaps.Patches
 {
     public static class Reflection
     {
+        public static readonly MethodInfo m_Component_Transform = typeof(Component).GetMethod("get_transform");
+
         public static readonly MethodInfo m_StartOfRound_Instance = typeof(StartOfRound).GetMethod("get_Instance");
+        public static readonly FieldInfo f_StartOfRound_allPlayerScripts = typeof(StartOfRound).GetField(nameof(StartOfRound.allPlayerScripts));
         public static readonly FieldInfo f_StartOfRound_mapScreen = typeof(StartOfRound).GetField(nameof(StartOfRound.mapScreen));
         public static readonly FieldInfo f_StartOfRound_mapScreenPlayerName = typeof(StartOfRound).GetField(nameof(StartOfRound.mapScreenPlayerName));
         public static readonly FieldInfo f_StartOfRound_radarCanvas = typeof(StartOfRound).GetField(nameof(StartOfRound.radarCanvas));
