@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -6,6 +6,7 @@ using System.Reflection.Emit;
 using GameNetcodeStuff;
 using HarmonyLib;
 using UnityEngine;
+using BepInEx.Bootstrap;
 
 using TwoRadarMaps.Compatibility;
 
@@ -54,6 +55,18 @@ namespace TwoRadarMaps.Patches
             // - StartOfRound.Instance.mapScreen.radarTargets[i].name = playerName;
             // + StartOfRound.Instance.mapScreen.ChangeNameOfTargetTransform(StartOfRound.Instance.allPlayerScripts[i].transform, playerName);
             var setName = instructionsList.FindIndex(insn => insn.StoresField(Reflection.f_TransformAndName_name));
+
+            if (setName == -1)
+            {
+                if (!Chainloader.PluginInfos.ContainsKey(LobbyControlCompatibility.MOD_ID))
+                {
+                    Plugin.Instance.Logger.LogWarning("Failed to patch SendNewPlayerValuesClientRpc to set the correct transform index's name.");
+                    Plugin.Instance.Logger.LogWarning("LobbyControl is not installed, but another mod may have fixed this vanilla bug.");
+                }
+
+                return instructions;
+            }
+
             var getTransformAndName = instructionsList.InstructionRangeForStackItems(setName, 1, 1);
 
             var loadTransformIndex = instructionsList.InstructionRangeForStackItems(getTransformAndName.End - 1, 0, 0);
