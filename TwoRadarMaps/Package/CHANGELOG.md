@@ -1,5 +1,8 @@
+## Version 1.3.6
+- Fixed NullReferenceExceptions when Steam players joined a lobby.
+
 ## Version 1.3.5
-- Prevent a conflict with LobbyControl by detect if it has already patched updating of players' usernames on the map.
+- Prevented a conflict with LobbyControl by detect if it has already patched updating of players' usernames on the map.
 
 ## Version 1.3.4
 - Fixed a vanilla bug that caused players' usernames to be desynced on the map.
