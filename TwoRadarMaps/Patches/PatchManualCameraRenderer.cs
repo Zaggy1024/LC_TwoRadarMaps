@@ -34,7 +34,7 @@ namespace TwoRadarMaps.Patches
 
         [HarmonyPatch(nameof(ManualCameraRenderer.ChangeNameOfTargetTransform))]
         [HarmonyTranspiler]
-        static IEnumerable<CodeInstruction> ChangeNameOfTargetTransformPostfix(IEnumerable<CodeInstruction> instructions)
+        static IEnumerable<CodeInstruction> ChangeNameOfTargetTransformTranspiler(IEnumerable<CodeInstruction> instructions)
         {
             var instructionsList = instructions.ToList();
 
