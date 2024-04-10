@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -78,6 +78,8 @@ namespace TwoRadarMaps.Patches
             var insertionIndex = getTransformAndName.Start;
             CodeInstruction[] loadPlayerScriptsInstructions = [
                 new CodeInstruction(OpCodes.Call, Reflection.m_StartOfRound_Instance),
+                new CodeInstruction(OpCodes.Ldfld, Reflection.f_StartOfRound_mapScreen),
+                new CodeInstruction(OpCodes.Call, Reflection.m_StartOfRound_Instance),
                 new CodeInstruction(OpCodes.Ldfld, Reflection.f_StartOfRound_allPlayerScripts),
             ];
             instructionsList.InsertRange(insertionIndex, loadPlayerScriptsInstructions);
@@ -92,11 +94,7 @@ namespace TwoRadarMaps.Patches
             insertionIndex += loadPlayerTransformInstructions.Length;
             insertionIndex += setName - getTransformAndName.End;
 
-            instructionsList.InsertRange(insertionIndex, [
-                new CodeInstruction(OpCodes.Call, Reflection.m_StartOfRound_Instance),
-                new CodeInstruction(OpCodes.Ldfld, Reflection.f_StartOfRound_mapScreen),
-                new CodeInstruction(OpCodes.Call, m_ManualCameraRenderer_ChangeNameOfTargetTransform)
-            ]);
+            instructionsList.Insert(insertionIndex, new CodeInstruction(OpCodes.Call, m_ManualCameraRenderer_ChangeNameOfTargetTransform));
 
             return instructionsList;
         }
