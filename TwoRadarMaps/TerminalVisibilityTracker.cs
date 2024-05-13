@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace TwoRadarMaps
 {
@@ -15,7 +15,8 @@ namespace TwoRadarMaps
         {
             Plugin.TerminalMapRenderer.SwitchScreenOn(false);
             Plugin.TerminalMapRenderer.enabled = false;
-            Plugin.TerminalMapRenderer.cam.enabled = false;
+            if (Plugin.TerminalMapRenderer.cam != null)
+                Plugin.TerminalMapRenderer.cam.enabled = false;
         }
     }
 }
