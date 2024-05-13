@@ -98,15 +98,19 @@ namespace TwoRadarMaps
             if (mainMapRenderer == null)
                 return;
 
-            mainMapRenderer.mapCameraLight.enabled = false;
-            if (TerminalMapRenderer != null)
-                TerminalMapRenderer.mapCameraLight.enabled = false;
-
             ManualCameraRenderer currentMapRenderer = null;
+
+            mainMapRenderer.mapCameraLight.enabled = false;
             if (camera == mainMapRenderer.cam)
                 currentMapRenderer = mainMapRenderer;
-            else if (camera == TerminalMapRenderer.cam)
-                currentMapRenderer = TerminalMapRenderer;
+
+            if (TerminalMapRenderer != null)
+            {
+                TerminalMapRenderer.mapCameraLight.enabled = false;
+
+                if (camera == TerminalMapRenderer.cam)
+                    currentMapRenderer = TerminalMapRenderer;
+            }
 
             if (currentMapRenderer == null)
                 return;
