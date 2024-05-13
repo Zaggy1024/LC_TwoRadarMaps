@@ -1,3 +1,6 @@
+## Verstion 1.3.8
+- Patched ImmersiveCompany's radar booster overhaul to avoid the map screen being blank upon first loading into a save. If the zoom command is enabled, the radar booster's expanded FOV will be overridden by the zoom command.
+
 ## Version 1.3.7
 - Fixed a NullReferenceException that could occur in `BeforeCameraRendering()` when loading into a save.
 
