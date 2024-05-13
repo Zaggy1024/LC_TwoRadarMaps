@@ -1,3 +1,6 @@
+## Version 1.3.7
+- Fixed a NullReferenceException that could occur in `BeforeCameraRendering()` when loading into a save.
+
 ## Version 1.3.6
 - Fixed NullReferenceExceptions when Steam players joined a lobby.
 
