@@ -67,9 +67,9 @@
 
     <PropertyGroup>
         <PostBuildEvent>
-            mkdir $(MSBuildProjectDirectory)\Package\BepInEx\plugins
+            mkdir $(MSBuildProjectDirectory)\Package
             copy /Y $(SolutionDir)README.md $(MSBuildProjectDirectory)\Package
-            copy /Y $(OutDir)TwoRadarMaps.dll $(MSBuildProjectDirectory)\Package\BepInEx\plugins
+            copy /Y $(OutDir)TwoRadarMaps.dll $(MSBuildProjectDirectory)\Package
         </PostBuildEvent>
     </PropertyGroup>
 
