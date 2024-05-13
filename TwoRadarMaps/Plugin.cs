@@ -18,7 +18,8 @@ namespace TwoRadarMaps
 {
     [BepInPlugin(MOD_UNIQUE_NAME, MOD_NAME, MOD_VERSION)]
     [BepInDependency(OpenBodyCamsCompatibility.MOD_ID, BepInDependency.DependencyFlags.SoftDependency)]
-    [BepInDependency(EnhancedRadarBoosterCompatibility.MOD_ID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(EnhancedRadarBoosterCompatibility.ENHANCED_RADAR_BOOSTER_MOD_ID, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(EnhancedRadarBoosterCompatibility.IMMERSIVE_COMPANY_MOD_ID, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(LobbyControlCompatibility.MOD_ID, BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {

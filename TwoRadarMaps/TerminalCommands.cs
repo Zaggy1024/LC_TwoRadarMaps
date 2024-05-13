@@ -26,6 +26,11 @@ namespace TwoRadarMaps
             RemoveAddedKeywords();
             Plugin.UpdateZoomFactors();
 
+            CycleZoomNode = null;
+            ZoomInNode = null;
+            ZoomOutNode = null;
+            ResetZoomNode = null;
+
             if (Plugin.EnableZoom.Value)
             {
                 CycleZoomNode = ScriptableObject.CreateInstance<TerminalNode>();
@@ -78,6 +83,8 @@ namespace TwoRadarMaps
                 AddCommandDescription("other", "ZOOM", "Cycle through zoom levels on the map. Specify direction with 'IN' and 'OUT'.\n" +
                     "The 'RESET ZOOM' command will set the zoom back to the default level.");
             }
+
+            TeleportNode = null;
 
             if (Plugin.EnableTeleportCommand.Value)
             {

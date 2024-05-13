@@ -11,56 +11,97 @@ using HarmonyLib;
 using UnityEngine;
 
 using TwoRadarMaps.Patches;
+using ImmersiveCompany.Patches;
 
 namespace TwoRadarMaps.Compatibility
 {
     internal static class EnhancedRadarBoosterCompatibility
     {
-        internal const string MOD_ID = "MrHydralisk.EnhancedRadarBooster";
+        internal const string ENHANCED_RADAR_BOOSTER_MOD_ID = "MrHydralisk.EnhancedRadarBooster";
+        internal const string IMMERSIVE_COMPANY_MOD_ID = "ImmersiveCompany";
+
+        private static MethodInfo m_MapCameraFocusOnPositionPostfixTranspiler;
 
         internal static void Initialize(Harmony harmony)
         {
-            if (!Chainloader.PluginInfos.ContainsKey(MOD_ID))
+            m_MapCameraFocusOnPositionPostfixTranspiler = typeof(EnhancedRadarBoosterCompatibility).GetMethod(nameof(MapCameraFocusOnPositionPostfixTranspiler), BindingFlags.NonPublic | BindingFlags.Static, [typeof(IEnumerable<CodeInstruction>), typeof(ILGenerator), typeof(MethodBase)]);
+
+            if (m_MapCameraFocusOnPositionPostfixTranspiler == null)
+            {
+                Plugin.Instance.Logger.LogError($"{nameof(MapCameraFocusOnPositionPostfixTranspiler)} was not found.");
+                Plugin.Instance.Logger.LogError($"Patches for {ENHANCED_RADAR_BOOSTER_MOD_ID} and {IMMERSIVE_COMPANY_MOD_ID} cannot be applied.");
                 return;
-            InitializeInternal(harmony);
+            }
+
+            if (Chainloader.PluginInfos.ContainsKey(ENHANCED_RADAR_BOOSTER_MOD_ID))
+                InitializeForEnhancedRadarBooster(harmony);
+
+            if (Chainloader.PluginInfos.ContainsKey(IMMERSIVE_COMPANY_MOD_ID))
+                InitializeForImmersiveCompany(harmony);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void InitializeInternal(Harmony harmony)
+        private static void InitializeForEnhancedRadarBooster(Harmony harmony)
         {
-            var m_MapCameraFocusOnPosition_Postfix = typeof(HarmonyPatches).GetMethod(nameof(HarmonyPatches.MCR_MapCameraFocusOnPosition_Postfix), BindingFlags.Public | BindingFlags.Static, null, [typeof(ManualCameraRenderer)], null);
+            var m_MapCameraFocusOnPosition_Postfix = typeof(HarmonyPatches).GetMethod(nameof(HarmonyPatches.MCR_MapCameraFocusOnPosition_Postfix), BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static, null, [typeof(ManualCameraRenderer)], null);
             if (m_MapCameraFocusOnPosition_Postfix == null)
             {
-                Plugin.Instance.Logger.LogError($"{MOD_ID} is present, but {nameof(HarmonyPatches.MCR_MapCameraFocusOnPosition_Postfix)} was not found.");
+                Plugin.Instance.Logger.LogError($"{ENHANCED_RADAR_BOOSTER_MOD_ID} is present, but {nameof(HarmonyPatches.MCR_MapCameraFocusOnPosition_Postfix)} was not found.");
                 return;
             }
             try
             {
                 harmony
                     .CreateProcessor(m_MapCameraFocusOnPosition_Postfix)
-                    .AddTranspiler(AccessTools.DeclaredMethod(typeof(EnhancedRadarBoosterCompatibility), nameof(MapCameraFocusOnPosition_Postfix_Transpiler)))
+                    .AddTranspiler(m_MapCameraFocusOnPositionPostfixTranspiler)
                     .Patch();
             }
             catch (Exception e)
             {
-                Plugin.Instance.Logger.LogError($"Failed to transpile {MOD_ID}'s {nameof(HarmonyPatches.MCR_MapCameraFocusOnPosition_Postfix)}");
+                Plugin.Instance.Logger.LogError($"Failed to transpile {ENHANCED_RADAR_BOOSTER_MOD_ID}'s {nameof(HarmonyPatches.MCR_MapCameraFocusOnPosition_Postfix)}");
                 Plugin.Instance.Logger.LogError(e);
             }
 
-            Plugin.Instance.Logger.LogInfo($"Patched EnhancedRadarBooster for compatibility with the zoom command.");
+            Plugin.Instance.Logger.LogInfo($"Finished patching EnhancedRadarBooster for compatibility with the zoom command.");
         }
 
-        private static IEnumerable<CodeInstruction> MapCameraFocusOnPosition_Postfix_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void InitializeForImmersiveCompany(Harmony harmony)
+        {
+            var m_ManualCameraRendererPatch_MapCameraFocusPatch = typeof(ManualCameraRendererPatch).GetMethod(nameof(ManualCameraRendererPatch.MapCameraFocusPatch), BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static, null, [typeof(ManualCameraRenderer)], null);
+            if (m_ManualCameraRendererPatch_MapCameraFocusPatch == null)
+            {
+                Plugin.Instance.Logger.LogError($"{IMMERSIVE_COMPANY_MOD_ID} is present, but {nameof(ManualCameraRendererPatch.MapCameraFocusPatch)} was not found.");
+                return;
+            }
+            try
+            {
+                harmony
+                    .CreateProcessor(m_ManualCameraRendererPatch_MapCameraFocusPatch)
+                    .AddTranspiler(m_MapCameraFocusOnPositionPostfixTranspiler)
+                    .Patch();
+            }
+            catch (Exception e)
+            {
+                Plugin.Instance.Logger.LogError($"Failed to transpile {IMMERSIVE_COMPANY_MOD_ID}'s {nameof(ManualCameraRendererPatch.MapCameraFocusPatch)}");
+                Plugin.Instance.Logger.LogError(e);
+            }
+
+            Plugin.Instance.Logger.LogInfo($"Finished patching ImmersiveCompany for compatibility with the zoom command.");
+        }
+
+        private static IEnumerable<CodeInstruction> MapCameraFocusOnPositionPostfixTranspiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator, MethodBase method)
         {
             var m_Camera_set_orthographicSize = typeof(Camera).GetMethod($"set_{nameof(Camera.orthographicSize)}");
-            var m_Plugin_GetZoomOrthographicSize = typeof(Plugin).GetMethod(nameof(Plugin.GetZoomOrthographicSize));
+            var f_TerminalCommands_CycleZoomNode = typeof(TerminalCommands).GetField(nameof(TerminalCommands.CycleZoomNode));
 
             var instructionsList = instructions.ToList();
 
             // Find:
-            //   __instance.mapCamera.orthographicSize = [constant]...
+            //   __instance.mapCamera.orthographicSize = [value];
             // and transform it into:
-            //   __instance.mapCamera.orthographicSize = (__instance == Plugin.terminalMapRenderer ? Plugin.GetZoomOrthographicSize() : [constant])...
+            //   if (__instance == StartOfRound.Instance.mapScreen)
+            //     __instance.mapCamera.orthographicSize = [value];
             var setOrthographicSize = 0;
             while (true)
             {
@@ -69,31 +110,26 @@ namespace TwoRadarMaps.Compatibility
                 if (setOrthographicSize == -1)
                     break;
 
-                var orthographicSizeCalculation = instructionsList.InstructionRangeForStackItems(setOrthographicSize, 0, 0);
-                for (int i = orthographicSizeCalculation.Start; i < orthographicSizeCalculation.End; i++)
-                {
-                    if (instructionsList[i].LoadsConstant())
-                    {
-                        var isNotTerminalMapLabel = generator.DefineLabel();
-                        instructionsList[i + 1].labels.Add(isNotTerminalMapLabel);
+                var skipPopsLabel = generator.DefineLabel();
+                instructionsList[setOrthographicSize].labels.Add(skipPopsLabel);
 
-                        var isTerminalMapLabel = generator.DefineLabel();
-                        CodeInstruction[] insertBefore = [
-                            new CodeInstruction(OpCodes.Ldarg_0),
-                            new CodeInstruction(OpCodes.Ldsfld, Reflection.f_Plugin_terminalMapRenderer),
-                            new CodeInstruction(OpCodes.Beq_S, isTerminalMapLabel),
-                        ];
-                        CodeInstruction[] insertAfter = [
-                            new CodeInstruction(OpCodes.Br_S, isNotTerminalMapLabel),
-                            new CodeInstruction(OpCodes.Call, m_Plugin_GetZoomOrthographicSize).WithLabels(isTerminalMapLabel),
-                        ];
-                        instructionsList.InsertRange(i, insertBefore);
-                        instructionsList.InsertRange(i + insertBefore.Length + 1, insertAfter);
+                var skipAssignmentLabel = generator.DefineLabel();
+                instructionsList[setOrthographicSize + 1].labels.Add(skipAssignmentLabel);
 
-                        setOrthographicSize = setOrthographicSize + insertBefore.Length + insertAfter.Length + 1;
-                        break;
-                    }
-                }
+                CodeInstruction[] instructionsToInsert = [
+                    new(OpCodes.Ldsfld, f_TerminalCommands_CycleZoomNode),
+                    new(OpCodes.Brfalse_S, skipPopsLabel),
+                    new(OpCodes.Ldarg_0),
+                    new(OpCodes.Call, Reflection.m_StartOfRound_Instance),
+                    new(OpCodes.Ldfld, Reflection.f_StartOfRound_mapScreen),
+                    new(OpCodes.Beq_S, skipPopsLabel),
+                    new(OpCodes.Pop),
+                    new(OpCodes.Pop),
+                    new(OpCodes.Br_S, skipAssignmentLabel),
+                ];
+
+                instructionsList.InsertRange(setOrthographicSize, instructionsToInsert);
+                setOrthographicSize += instructionsToInsert.Length + 1;
             }
 
             // Transform:

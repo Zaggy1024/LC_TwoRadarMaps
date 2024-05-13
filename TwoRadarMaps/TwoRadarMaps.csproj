@@ -27,6 +27,10 @@
             <HintPath>..\..\Libraries\EnhancedRadarBooster.dll</HintPath>
             <Private>false</Private>
         </Reference>
+        <Reference Include="ImmersiveCompany" Publicize="true">
+            <HintPath>..\..\Libraries\ImmersiveCompany_patched.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
         <Reference Include="OpenBodyCams">
             <HintPath>..\..\Libraries\OpenBodyCams.dll</HintPath>
             <Private>false</Private>
