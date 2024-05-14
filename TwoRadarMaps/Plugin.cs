@@ -32,10 +32,11 @@ namespace TwoRadarMaps
         public static Plugin Instance { get; private set; }
         public new ManualLogSource Logger => base.Logger;
 
+        public static ConfigEntry<FilterMode> TextureFiltering;
+
         public static ConfigEntry<bool> EnableZoom;
         public static ConfigEntry<string> ZoomLevels;
         public static ConfigEntry<int> DefaultZoomLevel;
-        public static ConfigEntry<FilterMode> TextureFiltering;
 
         public static ConfigEntry<bool> EnableTeleportCommand;
         public static ConfigEntry<bool> EnableTeleportCommandShorthand;
