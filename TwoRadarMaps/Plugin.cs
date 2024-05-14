@@ -34,6 +34,8 @@ namespace TwoRadarMaps
 
         public static ConfigEntry<FilterMode> TextureFiltering;
 
+        public static ConfigEntry<int> BodyCamHorizontalResolution;
+
         public static ConfigEntry<bool> EnableZoom;
         public static ConfigEntry<string> ZoomLevels;
         public static ConfigEntry<int> DefaultZoomLevel;
@@ -65,6 +67,10 @@ namespace TwoRadarMaps
                 TerminalMapRenderer.cam.targetTexture.filterMode = TextureFiltering.Value;
                 OpenBodyCamsCompatibility.UpdateBodyCamTexture();
             };
+
+            BodyCamHorizontalResolution = Config.Bind("Compatibility", "BodyCamHorizontalResolution", 170,
+                "The horizontal resolution to use for the picture-in-picture body cam when it is enabled in OpenBodyCams 2.1.0+.\n\n" +
+                "The vertical resolution will be calculated based on a 4:3 aspect ratio.");
 
             EnableZoom = Config.Bind("Zoom", "Enabled", false, "Enable 'zoom in' and 'zoom out' commands in the terminal to zoom in and out of the terminal radar map.");
             EnableZoom.SettingChanged += (_, _) => TerminalCommands.Initialize();

@@ -64,7 +64,27 @@ namespace TwoRadarMaps.Compatibility
             ShipObjects.MainBodyCam.OnBlankedSet -= OpenBodyCams.TerminalCommands.SetBodyCamBlanked;
             terminalBodyCam.OnBlankedSet += SetBodyCamBlanked;
 
+            UpdateTerminalBodyCamSettings();
+            Plugin.BodyCamHorizontalResolution.SettingChanged += (_, _) => UpdateTerminalBodyCamSettings();
+
             OpenBodyCams.TerminalCommands.PiPImage.GetComponent<TerminalBodyCamVisibilityTracker>().BodyCamToActivate = terminalBodyCam;
+        }
+
+        private static void UpdateTerminalBodyCamSettings()
+        {
+            try
+            {
+                UpdateTerminalBodyCamResolution();
+            }
+            catch { }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void UpdateTerminalBodyCamResolution()
+        {
+            var horizontalResolution = Plugin.BodyCamHorizontalResolution.Value;
+            var resolution = new Vector2Int(horizontalResolution, horizontalResolution * 3 / 4);
+            ((BodyCamComponent)TerminalBodyCam).Resolution = resolution;
         }
 
         public static void UpdateBodyCamTexture()
