@@ -1,3 +1,6 @@
+## Version  1.4.0
+- Added an option to set the resolution of the body cam provided by [OpenBodyCams](https://thunderstore.io/c/lethal-company/p/Zaggy1024/OpenBodyCams/), requiring version 2.1.0 of that mod.
+
 ## Version 1.3.8
 - Patched ImmersiveCompany's radar booster overhaul to avoid the map screen being blank upon first loading into a save. If the zoom command is enabled, the radar booster's expanded FOV will be overridden by the zoom command.
 
