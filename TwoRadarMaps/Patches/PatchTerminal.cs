@@ -132,13 +132,8 @@ namespace TwoRadarMaps.Patches
                 filterMode = Plugin.TextureFiltering.Value,
             };
 
-            // The map renderer only enables the camera if the mesh is visible, so set the mesh to the terminal mesh.
-            // Calling SwitchScreenOn swaps the specified material on 'mesh' between on and off screen materials,
-            // so make this a no-op by setting them to the existing material.
-            terminalMapRenderer.mesh = terminalMesh;
-            terminalMapRenderer.materialIndex = 0;
-            terminalMapRenderer.onScreenMat = terminalMapRenderer.mesh.sharedMaterials[terminalMapRenderer.materialIndex];
-            terminalMapRenderer.offScreenMat = terminalMapRenderer.onScreenMat;
+            // Disable the camera until the player interacts with the terminal.
+            terminalMapRenderer.cam.enabled = false;
 
             // Our terminal map will enable and disable the arrow UI when it is active.
             terminalMapRenderer.shipArrowUI = terminalMapShipArrowUI;
@@ -153,10 +148,6 @@ namespace TwoRadarMaps.Patches
             Plugin.TerminalMapRenderer = terminalMapRenderer;
             Plugin.TerminalMapScreenUICanvas = terminalMapScreenUICanvas;
             Plugin.TerminalMapScreenPlayerName = terminalMapPlayerName;
-
-            // Disable the camera until the player interacts with the terminal.
-            Plugin.TerminalMapRenderer.SwitchScreenOn(false);
-            Plugin.TerminalMapRenderer.cam.enabled = false;
 
             Plugin.Terminal.terminalUIScreen.gameObject.AddComponent<TerminalVisibilityTracker>();
 
