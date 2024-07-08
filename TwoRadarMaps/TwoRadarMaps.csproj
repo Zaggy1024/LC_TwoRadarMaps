@@ -69,12 +69,9 @@
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     </PropertyGroup>
 
-    <PropertyGroup>
-        <PostBuildEvent>
-            mkdir $(MSBuildProjectDirectory)\Package
-            copy /Y $(SolutionDir)README.md $(MSBuildProjectDirectory)\Package
-            copy /Y $(OutDir)TwoRadarMaps.dll $(MSBuildProjectDirectory)\Package
-        </PostBuildEvent>
-    </PropertyGroup>
+    <Target Name="CopyToPackage" AfterTargets="AfterBuild">
+        <Copy SourceFiles="$(SolutionDir)README.md" DestinationFolder="$(MSBuildProjectDirectory)\Package" />
+        <Copy SourceFiles="$(OutDir)TwoRadarMaps.dll" DestinationFolder="$(MSBuildProjectDirectory)\Package" />
+    </Target>
 
 </Project>
