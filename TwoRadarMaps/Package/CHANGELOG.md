@@ -1,5 +1,5 @@
-## Version  1.4.0
-- Added an option to set the resolution of the body cam provided by [OpenBodyCams](https://thunderstore.io/c/lethal-company/p/Zaggy1024/OpenBodyCams/), requiring version 2.1.0 of that mod.
+## Version 1.4.0
+- Added an option to set the resolution of the body cam provided by [OpenBodyCams](https://github.com/Zaggy1024/LC_OpenBodyCams), requiring version 2.1.0 of that mod.
 
 ## Version 1.3.8
 - Patched ImmersiveCompany's radar booster overhaul to avoid the map screen being blank upon first loading into a save. If the zoom command is enabled, the radar booster's expanded FOV will be overridden by the zoom command.
@@ -38,10 +38,10 @@
 - Added a compatibility patch for EnhancedRadarBooster's to allow the `zoom` command to work with the mod's increased radar booster map range.
 
 ## Version ~~1.2.1~~ 1.2.2
-- Fixed an unintentional hard dependency on [OpenBodyCams](https://thunderstore.io/c/lethal-company/p/Zaggy1024/OpenBodyCams/).
+- Fixed an unintentional hard dependency on [OpenBodyCams](https://github.com/Zaggy1024/LC_OpenBodyCams).
 
 ## Version 1.2.0
-- Added a compatibility mode for [OpenBodyCams](https://thunderstore.io/c/lethal-company/p/Zaggy1024/OpenBodyCams/) to display a separate body cam when using its `view bodycam` command.
+- Added a compatibility mode for [OpenBodyCams](https://github.com/Zaggy1024/LC_OpenBodyCams) to display a separate body cam when using its `view bodycam` command.
 - Added an option to select the texture filtering used on the map. By default, nearest-neighbor (`Point`) filtering will be used.
 
 ## Version 1.1.2
