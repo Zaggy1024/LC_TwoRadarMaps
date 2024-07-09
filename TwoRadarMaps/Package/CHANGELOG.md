@@ -1,3 +1,6 @@
+## Version 1.4.1
+- Prevented a conflict with the option to change the terminal color in [TerminalStuff](https://github.com/darmuh/TerminalStuff).
+
 ## Version 1.4.0
 - Added an option to set the resolution of the body cam provided by [OpenBodyCams](https://github.com/Zaggy1024/LC_OpenBodyCams), requiring version 2.1.0 of that mod.
 
