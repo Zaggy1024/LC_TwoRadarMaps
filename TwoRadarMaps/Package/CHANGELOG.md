@@ -1,3 +1,6 @@
+## Version 1.4.2
+- Avoided breakage that would occur when [TerminalStuff](https://github.com/darmuh/TerminalStuff) v3.5.0 removed the `view monitor` command.
+
 ## Version 1.4.1
 - Prevented a conflict with the option to change the terminal color in [TerminalStuff](https://github.com/darmuh/TerminalStuff).
 
