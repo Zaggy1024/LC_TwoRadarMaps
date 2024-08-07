@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>netstandard2.1</TargetFramework>
@@ -70,6 +70,7 @@
     </PropertyGroup>
 
     <Target Name="CopyToPackage" AfterTargets="AfterBuild">
+        <Copy SourceFiles="$(SolutionDir)LICENSE" DestinationFolder="$(MSBuildProjectDirectory)\Package" />
         <Copy SourceFiles="$(SolutionDir)README.md" DestinationFolder="$(MSBuildProjectDirectory)\Package" />
         <Copy SourceFiles="$(OutDir)TwoRadarMaps.dll" DestinationFolder="$(MSBuildProjectDirectory)\Package" />
     </Target>
