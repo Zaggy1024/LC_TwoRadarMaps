@@ -23,7 +23,6 @@ namespace TwoRadarMaps.Patches
         static void StartPrefix()
         {
             var terminalObject = Plugin.Terminal.gameObject;
-            var viewMonitorNode = Plugin.Terminal.terminalNodes.allKeywords.First(keyword => keyword.word == "view")?.compatibleNouns.First(noun => noun.noun.word == "monitor")?.result;
 
             // Existing objects/components
             var itemSystems = GameObject.Find("Systems/GameSystems/ItemSystems");
@@ -142,9 +141,15 @@ namespace TwoRadarMaps.Patches
             terminalMapRenderer.mapCameraAnimator = newAnimator;
             terminalMapRenderer.mapCameraLight = newLight;
 
-            viewMonitorNode.displayTexture = terminalMapRenderer.cam.targetTexture;
+            var viewMonitorNode = Plugin.Terminal.terminalNodes
+                .allKeywords.FirstOrDefault(keyword => keyword.word == "view")?
+                .compatibleNouns.FirstOrDefault(noun => noun.noun.word == "monitor")?.result;
+            if (viewMonitorNode != null)
+            {
+                viewMonitorNode.displayTexture = terminalMapRenderer.cam.targetTexture;
+                Plugin.Instance.Logger.LogInfo($"Terminal node '{viewMonitorNode.name}' will now use a separate texture.");
+            }
 
-            Plugin.Instance.Logger.LogInfo($"Terminal node '{viewMonitorNode.name}' will now use a separate texture.");
             Plugin.TerminalMapRenderer = terminalMapRenderer;
             Plugin.TerminalMapScreenUICanvas = terminalMapScreenUICanvas;
             Plugin.TerminalMapScreenPlayerName = terminalMapPlayerName;
