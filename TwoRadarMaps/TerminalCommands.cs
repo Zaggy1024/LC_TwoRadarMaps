@@ -208,10 +208,6 @@ namespace TwoRadarMaps
                 node.displayText += text;
         }
 
-        static void RemoveCommandDescription(TerminalNode category, string text)
-        {
-        }
-
         static void RemoveAddedKeywords()
         {
             // Remove references to new keywords.
