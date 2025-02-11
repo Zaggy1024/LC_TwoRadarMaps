@@ -1,3 +1,6 @@
+## Version 1.4.3
+- Fixed the terminal map rendering unnecessarily when [TerminalStuff](https://github.com/darmuh/TerminalStuff) enables the terminal UI while not interacting with it.
+
 ## Version 1.4.2
 - Avoided breakage that would occur when [TerminalStuff](https://github.com/darmuh/TerminalStuff) v3.5.0 removed the `view monitor` command.
 
