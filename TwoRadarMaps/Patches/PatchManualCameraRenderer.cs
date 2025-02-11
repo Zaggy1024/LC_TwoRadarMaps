@@ -186,5 +186,16 @@ namespace TwoRadarMaps.Patches
             StartOfRound.Instance.mapScreen.radarTargets = sortedTargets;
             Plugin.TerminalMapRenderer.radarTargets = sortedTargets;
         }
+
+        [HarmonyPatch(nameof(ManualCameraRenderer.MeetsCameraEnabledConditions))]
+        [HarmonyPrefix]
+        private static bool MeetsCameraEnabledConditionsPrefix(ManualCameraRenderer __instance, ref bool __result)
+        {
+            if (__instance != Plugin.TerminalMapRenderer)
+                return true;
+            var image = Plugin.Terminal.terminalImage;
+            __result = image.isActiveAndEnabled && image.texture == __instance.cam.targetTexture;
+            return false;
+        }
     }
 }

@@ -121,7 +121,6 @@ namespace TwoRadarMaps.Patches
             }
 
             var terminalMapRenderer = terminalObject.AddComponent<ManualCameraRenderer>();
-            terminalMapRenderer.enabled = false;
 
             terminalMapRenderer.cam = terminalMapCamera;
             terminalMapRenderer.mapCamera = terminalMapCamera;
@@ -130,9 +129,6 @@ namespace TwoRadarMaps.Patches
                 name = "TerminalMapTexture",
                 filterMode = Plugin.TextureFiltering.Value,
             };
-
-            // Disable the camera until the player interacts with the terminal.
-            terminalMapRenderer.cam.enabled = false;
 
             // Our terminal map will enable and disable the arrow UI when it is active.
             terminalMapRenderer.shipArrowUI = terminalMapShipArrowUI;
@@ -153,8 +149,6 @@ namespace TwoRadarMaps.Patches
             Plugin.TerminalMapRenderer = terminalMapRenderer;
             Plugin.TerminalMapScreenUICanvas = terminalMapScreenUICanvas;
             Plugin.TerminalMapScreenPlayerName = terminalMapPlayerName;
-
-            Plugin.Terminal.terminalUIScreen.gameObject.AddComponent<TerminalVisibilityTracker>();
 
             // Vanilla bugfix: When radar boosters are added to the targets list, the list is sorted by NetworkObject.NetworkObjectId.
             // However, players aren't initially ordered according to this field, so switching targets after activating a radar booster
