@@ -3,244 +3,243 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-namespace TwoRadarMaps
+namespace TwoRadarMaps;
+
+public static class TerminalCommands
 {
-    public static class TerminalCommands
+    public static TerminalNode CycleZoomNode = null;
+    public static TerminalNode ZoomInNode = null;
+    public static TerminalNode ZoomOutNode = null;
+    public static TerminalNode ResetZoomNode = null;
+
+    public static TerminalNode TeleportNode = null;
+
+    private static readonly List<TerminalKeyword> newTerminalKeywords = [];
+    private static readonly List<TerminalKeyword> modifiedTerminalKeywords = [];
+    private static readonly List<(TerminalNode, string)> appendedDescriptions = [];
+
+    public static void Initialize()
     {
-        public static TerminalNode CycleZoomNode = null;
-        public static TerminalNode ZoomInNode = null;
-        public static TerminalNode ZoomOutNode = null;
-        public static TerminalNode ResetZoomNode = null;
+        if (Plugin.Terminal == null)
+            return;
 
-        public static TerminalNode TeleportNode = null;
+        RemoveAddedKeywords();
+        Plugin.UpdateZoomFactors();
 
-        private static readonly List<TerminalKeyword> newTerminalKeywords = [];
-        private static readonly List<TerminalKeyword> modifiedTerminalKeywords = [];
-        private static readonly List<(TerminalNode, string)> appendedDescriptions = [];
+        CycleZoomNode = null;
+        ZoomInNode = null;
+        ZoomOutNode = null;
+        ResetZoomNode = null;
 
-        public static void Initialize()
+        if (Plugin.EnableZoom.Value)
         {
-            if (Plugin.Terminal == null)
-                return;
+            CycleZoomNode = ScriptableObject.CreateInstance<TerminalNode>();
+            CycleZoomNode.name = "CycleZoomNode";
+            CycleZoomNode.displayText = "";
+            CycleZoomNode.clearPreviousText = true;
 
-            RemoveAddedKeywords();
-            Plugin.UpdateZoomFactors();
+            ZoomInNode = ScriptableObject.CreateInstance<TerminalNode>();
+            ZoomInNode.name = "ZoomIn";
+            ZoomInNode.displayText = "";
+            ZoomInNode.clearPreviousText = true;
 
-            CycleZoomNode = null;
-            ZoomInNode = null;
-            ZoomOutNode = null;
-            ResetZoomNode = null;
+            ZoomOutNode = ScriptableObject.CreateInstance<TerminalNode>();
+            ZoomOutNode.name = "ZoomOut";
+            ZoomOutNode.displayText = "";
+            ZoomOutNode.clearPreviousText = true;
 
-            if (Plugin.EnableZoom.Value)
-            {
-                CycleZoomNode = ScriptableObject.CreateInstance<TerminalNode>();
-                CycleZoomNode.name = "CycleZoomNode";
-                CycleZoomNode.displayText = "";
-                CycleZoomNode.clearPreviousText = true;
+            ResetZoomNode = ScriptableObject.CreateInstance<TerminalNode>();
+            ResetZoomNode.name = "ResetZoom";
+            ResetZoomNode.displayText = "";
+            ResetZoomNode.clearPreviousText = true;
 
-                ZoomInNode = ScriptableObject.CreateInstance<TerminalNode>();
-                ZoomInNode.name = "ZoomIn";
-                ZoomInNode.displayText = "";
-                ZoomInNode.clearPreviousText = true;
+            var inKeyword = FindOrCreateKeyword("In", "in", false);
+            var outKeyword = FindOrCreateKeyword("Out", "out", false);
+            var zoomVerbKeyword = FindOrCreateKeyword("Zoom", "zoom", true,
+                [
+                    new CompatibleNoun()
+                    {
+                        noun = inKeyword,
+                        result = ZoomInNode,
+                    },
+                    new CompatibleNoun()
+                    {
+                        noun = outKeyword,
+                        result = ZoomOutNode,
+                    },
+                ]);
+            zoomVerbKeyword.specialKeywordResult = CycleZoomNode;
 
-                ZoomOutNode = ScriptableObject.CreateInstance<TerminalNode>();
-                ZoomOutNode.name = "ZoomOut";
-                ZoomOutNode.displayText = "";
-                ZoomOutNode.clearPreviousText = true;
+            var zoomNounKeyword = FindOrCreateKeyword("Zoom", "zoom", false);
+            FindOrCreateKeyword("Reset", "reset", true,
+                [
+                    new CompatibleNoun()
+                    {
+                        noun = zoomNounKeyword,
+                        result = ResetZoomNode,
+                    },
+                ]);
 
-                ResetZoomNode = ScriptableObject.CreateInstance<TerminalNode>();
-                ResetZoomNode.name = "ResetZoom";
-                ResetZoomNode.displayText = "";
-                ResetZoomNode.clearPreviousText = true;
-
-                var inKeyword = FindOrCreateKeyword("In", "in", false);
-                var outKeyword = FindOrCreateKeyword("Out", "out", false);
-                var zoomVerbKeyword = FindOrCreateKeyword("Zoom", "zoom", true,
-                    [
-                        new CompatibleNoun()
-                        {
-                            noun = inKeyword,
-                            result = ZoomInNode,
-                        },
-                        new CompatibleNoun()
-                        {
-                            noun = outKeyword,
-                            result = ZoomOutNode,
-                        },
-                    ]);
-                zoomVerbKeyword.specialKeywordResult = CycleZoomNode;
-
-                var zoomNounKeyword = FindOrCreateKeyword("Zoom", "zoom", false);
-                FindOrCreateKeyword("Reset", "reset", true,
-                    [
-                        new CompatibleNoun()
-                        {
-                            noun = zoomNounKeyword,
-                            result = ResetZoomNode,
-                        },
-                    ]);
-
-                AddCommandDescription("other", "ZOOM", "Cycle through zoom levels on the map. Specify direction with 'IN' and 'OUT'.\n" +
-                    "The 'RESET ZOOM' command will set the zoom back to the default level.");
-            }
-
-            TeleportNode = null;
-
-            if (Plugin.EnableTeleportCommand.Value)
-            {
-                TeleportNode = ScriptableObject.CreateInstance<TerminalNode>();
-                TeleportNode.name = "TeleportNode";
-                TeleportNode.clearPreviousText = true;
-
-                var teleporterNounKeyword = FindOrCreateKeyword("Teleporter", "teleporter", false);
-                FindOrCreateKeyword("Activate", "activate", true,
-                    [
-                        new CompatibleNoun()
-                        {
-                            noun = teleporterNounKeyword,
-                            result = TeleportNode,
-                        }
-                    ]);
-
-                var shorthandAppend = "";
-
-                if (Plugin.EnableTeleportCommandShorthand.Value)
-                {
-                    var teleportShorthandKeyword = FindOrCreateKeyword("TeleportShorthand", "tp", true);
-                    teleportShorthandKeyword.specialKeywordResult = TeleportNode;
-                    shorthandAppend = "/TP";
-                }
-
-                AddCommandDescription("other", "ACTIVATE TELEPORTER" + shorthandAppend, "Activate the teleporter to beam the player monitored on the map into the ship.");
-            }
-
-            AddNewlyCreatedCommands();
+            AddCommandDescription("other", "ZOOM", "Cycle through zoom levels on the map. Specify direction with 'IN' and 'OUT'.\n" +
+                "The 'RESET ZOOM' command will set the zoom back to the default level.");
         }
 
-        public static bool ProcessNode(TerminalNode node)
+        TeleportNode = null;
+
+        if (Plugin.EnableTeleportCommand.Value)
         {
-            if (node == CycleZoomNode)
+            TeleportNode = ScriptableObject.CreateInstance<TerminalNode>();
+            TeleportNode.name = "TeleportNode";
+            TeleportNode.clearPreviousText = true;
+
+            var teleporterNounKeyword = FindOrCreateKeyword("Teleporter", "teleporter", false);
+            FindOrCreateKeyword("Activate", "activate", true,
+                [
+                    new CompatibleNoun()
+                    {
+                        noun = teleporterNounKeyword,
+                        result = TeleportNode,
+                    }
+                ]);
+
+            var shorthandAppend = "";
+
+            if (Plugin.EnableTeleportCommandShorthand.Value)
             {
-                Plugin.CycleTerminalMapZoom();
-                return false;
+                var teleportShorthandKeyword = FindOrCreateKeyword("TeleportShorthand", "tp", true);
+                teleportShorthandKeyword.specialKeywordResult = TeleportNode;
+                shorthandAppend = "/TP";
             }
-            if (node == ZoomInNode)
-            {
-                Plugin.ZoomTerminalMapIn();
-                return false;
-            }
-            if (node == ZoomOutNode)
-            {
-                Plugin.ZoomTerminalMapOut();
-                return false;
-            }
-            if (node == ResetZoomNode)
-            {
-                Plugin.SetZoomLevel(Plugin.DefaultZoomLevel.Value);
-                return false;
-            }
-            if (node == TeleportNode)
-            {
-                if (Plugin.Teleporter == null)
-                {
-                    TeleportNode.displayText = "Teleporter is not installed.\n\n";
-                    return true;
-                }
-                TeleportNode.displayText = $"Teleporting {StartOfRound.Instance.mapScreen.radarTargets[Plugin.TerminalMapRenderer.targetTransformIndex]?.name}...\n\n";
-                Plugin.TeleportTarget(Plugin.TerminalMapRenderer.targetTransformIndex);
-                return false;
-            }
-            return true;
+
+            AddCommandDescription("other", "ACTIVATE TELEPORTER" + shorthandAppend, "Activate the teleporter to beam the player monitored on the map into the ship.");
         }
 
-        static TerminalKeyword FindKeyword(string word, bool verb)
-        {
-            return Plugin.Terminal.terminalNodes.allKeywords.FirstOrDefault(keyword => keyword.word == word && keyword.isVerb == verb);
-        }
+        AddNewlyCreatedCommands();
+    }
 
-        static CompatibleNoun FindCompatibleNoun(this TerminalKeyword keyword, string noun)
+    public static bool ProcessNode(TerminalNode node)
+    {
+        if (node == CycleZoomNode)
         {
-            return keyword.compatibleNouns.FirstOrDefault(compatible => compatible.noun.word == noun);
+            Plugin.CycleTerminalMapZoom();
+            return false;
         }
-
-        static TerminalKeyword FindOrCreateKeyword(string name, string word, bool verb, CompatibleNoun[] compatibleNouns = null)
+        if (node == ZoomInNode)
         {
-            Plugin.Instance.Logger.LogInfo($"Creating terminal {(verb ? "verb" : "noun")} '{word}' ({name}).");
-            TerminalKeyword keyword = FindKeyword(word, verb);
-            if (keyword == null)
+            Plugin.ZoomTerminalMapIn();
+            return false;
+        }
+        if (node == ZoomOutNode)
+        {
+            Plugin.ZoomTerminalMapOut();
+            return false;
+        }
+        if (node == ResetZoomNode)
+        {
+            Plugin.SetZoomLevel(Plugin.DefaultZoomLevel.Value);
+            return false;
+        }
+        if (node == TeleportNode)
+        {
+            if (Plugin.Teleporter == null)
             {
-                keyword = ScriptableObject.CreateInstance<TerminalKeyword>();
-                keyword.name = name;
-                keyword.isVerb = verb;
-                keyword.word = word;
-                keyword.compatibleNouns = compatibleNouns;
-                newTerminalKeywords.Add(keyword);
-                Plugin.Instance.Logger.LogInfo($"  Keyword was not found, created a new one.");
+                TeleportNode.displayText = "Teleporter is not installed.\n\n";
+                return true;
             }
-            else
-            {
-                keyword.compatibleNouns = [.. keyword.compatibleNouns ?? [], .. compatibleNouns ?? []];
-                Plugin.Instance.Logger.LogInfo($"  Keyword existed, appended nouns.");
-            }
-
-            modifiedTerminalKeywords.Add(keyword);
-            return keyword;
+            TeleportNode.displayText = $"Teleporting {StartOfRound.Instance.mapScreen.radarTargets[Plugin.TerminalMapRenderer.targetTransformIndex]?.name}...\n\n";
+            Plugin.TeleportTarget(Plugin.TerminalMapRenderer.targetTransformIndex);
+            return false;
         }
+        return true;
+    }
 
-        static void AddNewlyCreatedCommands()
+    static TerminalKeyword FindKeyword(string word, bool verb)
+    {
+        return Plugin.Terminal.terminalNodes.allKeywords.FirstOrDefault(keyword => keyword.word == word && keyword.isVerb == verb);
+    }
+
+    static CompatibleNoun FindCompatibleNoun(this TerminalKeyword keyword, string noun)
+    {
+        return keyword.compatibleNouns.FirstOrDefault(compatible => compatible.noun.word == noun);
+    }
+
+    static TerminalKeyword FindOrCreateKeyword(string name, string word, bool verb, CompatibleNoun[] compatibleNouns = null)
+    {
+        Plugin.Instance.Logger.LogInfo($"Creating terminal {(verb ? "verb" : "noun")} '{word}' ({name}).");
+        TerminalKeyword keyword = FindKeyword(word, verb);
+        if (keyword == null)
         {
-            var nodes = Plugin.Terminal.terminalNodes;
-            nodes.allKeywords = [.. nodes.allKeywords, .. newTerminalKeywords];
+            keyword = ScriptableObject.CreateInstance<TerminalKeyword>();
+            keyword.name = name;
+            keyword.isVerb = verb;
+            keyword.word = word;
+            keyword.compatibleNouns = compatibleNouns;
+            newTerminalKeywords.Add(keyword);
+            Plugin.Instance.Logger.LogInfo($"  Keyword was not found, created a new one.");
         }
-
-        static void AddCommandDescription(string category, string word, string description)
+        else
         {
-            var node = FindKeyword(category, verb: false).specialKeywordResult;
-            var text = new StringBuilder(word.Length + description.Length + 5)
-                .Append(">").Append(word).Append("\n")
-                .Append(description)
-                .Append("\n\n")
-                .ToString();
-            appendedDescriptions.Add((node, text));
-            if (node.displayText.EndsWith("\n\n\n"))
-                node.displayText = node.displayText.Insert(node.displayText.Length - 1, text);
-            else
-                node.displayText += text;
+            keyword.compatibleNouns = [.. keyword.compatibleNouns ?? [], .. compatibleNouns ?? []];
+            Plugin.Instance.Logger.LogInfo($"  Keyword existed, appended nouns.");
         }
 
-        static void RemoveAddedKeywords()
+        modifiedTerminalKeywords.Add(keyword);
+        return keyword;
+    }
+
+    static void AddNewlyCreatedCommands()
+    {
+        var nodes = Plugin.Terminal.terminalNodes;
+        nodes.allKeywords = [.. nodes.allKeywords, .. newTerminalKeywords];
+    }
+
+    static void AddCommandDescription(string category, string word, string description)
+    {
+        var node = FindKeyword(category, verb: false).specialKeywordResult;
+        var text = new StringBuilder(word.Length + description.Length + 5)
+            .Append(">").Append(word).Append("\n")
+            .Append(description)
+            .Append("\n\n")
+            .ToString();
+        appendedDescriptions.Add((node, text));
+        if (node.displayText.EndsWith("\n\n\n"))
+            node.displayText = node.displayText.Insert(node.displayText.Length - 1, text);
+        else
+            node.displayText += text;
+    }
+
+    static void RemoveAddedKeywords()
+    {
+        // Remove references to new keywords.
+        foreach (var keyword in modifiedTerminalKeywords)
         {
-            // Remove references to new keywords.
-            foreach (var keyword in modifiedTerminalKeywords)
-            {
-                if (keyword.compatibleNouns != null)
-                    keyword.compatibleNouns = [.. keyword.compatibleNouns.Where(compatible => !newTerminalKeywords.Contains(compatible.noun))];
-            }
-            modifiedTerminalKeywords.Clear();
-
-            // Remove new keywords.
-            foreach (var keyword in newTerminalKeywords)
-                Object.Destroy(keyword);
-
-            var nodes = Plugin.Terminal.terminalNodes;
-            nodes.allKeywords = [.. nodes.allKeywords.Where(keyword => !newTerminalKeywords.Contains(keyword))];
-
-            newTerminalKeywords.Clear();
-
-            // Remove command descriptions.
-            foreach (var (category, text) in appendedDescriptions)
-            {
-                var index = category.displayText.IndexOf(text);
-                if (index == -1)
-                {
-                    Plugin.Instance.Logger.LogError($"Could not find command description text in {category.name} to remove it:");
-                    Plugin.Instance.Logger.LogError(text);
-                    continue;
-                }
-                category.displayText = category.displayText.Remove(index, text.Length);
-            }
-
-            appendedDescriptions.Clear();
+            if (keyword.compatibleNouns != null)
+                keyword.compatibleNouns = [.. keyword.compatibleNouns.Where(compatible => !newTerminalKeywords.Contains(compatible.noun))];
         }
+        modifiedTerminalKeywords.Clear();
+
+        // Remove new keywords.
+        foreach (var keyword in newTerminalKeywords)
+            Object.Destroy(keyword);
+
+        var nodes = Plugin.Terminal.terminalNodes;
+        nodes.allKeywords = [.. nodes.allKeywords.Where(keyword => !newTerminalKeywords.Contains(keyword))];
+
+        newTerminalKeywords.Clear();
+
+        // Remove command descriptions.
+        foreach (var (category, text) in appendedDescriptions)
+        {
+            var index = category.displayText.IndexOf(text);
+            if (index == -1)
+            {
+                Plugin.Instance.Logger.LogError($"Could not find command description text in {category.name} to remove it:");
+                Plugin.Instance.Logger.LogError(text);
+                continue;
+            }
+            category.displayText = category.displayText.Remove(index, text.Length);
+        }
+
+        appendedDescriptions.Clear();
     }
 }
