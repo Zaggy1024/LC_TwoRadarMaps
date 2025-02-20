@@ -139,6 +139,8 @@ public class Plugin : BaseUnityPlugin
 
     internal static void SetTargetIndex(ManualCameraRenderer mapRenderer, int targetIndex)
     {
+        if (targetIndex < 0)
+            return;
         if (targetIndex >= mapRenderer.radarTargets.Count)
             return;
 
