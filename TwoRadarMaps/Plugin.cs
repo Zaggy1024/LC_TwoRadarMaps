@@ -245,6 +245,8 @@ public class Plugin : BaseUnityPlugin
             Instance.Logger.LogError($"Attempted to teleport target #{targetIndex} ({mapRenderer.radarTargets[targetIndex].name}) with no teleporter.");
             return;
         }
+        if (Teleporter.cooldownTime > 0)
+            return;
 
         var oldIndex = mapRenderer.targetTransformIndex;
         SetTargetIndex(mapRenderer, targetIndex);
