@@ -131,8 +131,7 @@ public class Plugin : BaseUnityPlugin
     {
         if (targetTransform == null)
             return false;
-        var player = targetTransform.transform.GetComponent<PlayerControllerB>();
-        if (player == null)
+        if (!targetTransform.transform.TryGetComponent(out PlayerControllerB player))
             return true;
         return player.isPlayerControlled || player.isPlayerDead || player.redirectToEnemy != null;
     }
