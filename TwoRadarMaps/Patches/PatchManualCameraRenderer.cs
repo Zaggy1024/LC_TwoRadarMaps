@@ -177,9 +177,19 @@ internal static class PatchManualCameraRenderer
     private static void OnTargetListResorted(ManualCameraRenderer mapRenderer, List<TransformAndName> sortedTargets)
     {
         var initialIndex = mapRenderer.targetTransformIndex;
+        var initialTarget = mapRenderer.radarTargets[initialIndex].transform;
 
         if (mapRenderer.radarTargets[initialIndex] == sortedTargets[initialIndex])
             return;
+
+        for (var i = 0; i < sortedTargets.Count; i++)
+        {
+            if (sortedTargets[i].transform == initialTarget)
+            {
+                Plugin.SetTargetIndex(mapRenderer, i);
+                return;
+            }
+        }
 
         mapRenderer.radarTargets = sortedTargets;
         var validTargetIndex = Plugin.GetNextValidTarget(sortedTargets, initialIndex);
