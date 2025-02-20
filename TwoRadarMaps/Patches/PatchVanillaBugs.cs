@@ -89,8 +89,6 @@ internal static class PatchVanillaBugs
 
     private static void UpdateMonitoredPlayerNames()
     {
-        if (!StartOfRound.Instance.IsHost && !StartOfRound.Instance.IsServer)
-            return;
         Plugin.EnsureAllMapRenderersHaveValidTargets();
     }
 

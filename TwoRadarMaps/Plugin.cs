@@ -176,7 +176,8 @@ public class Plugin : BaseUnityPlugin
 
     public static void EnsureAllMapRenderersHaveValidTargets()
     {
-        EnsureMapRendererHasValidTarget(StartOfRound.Instance.mapScreen);
+        if (StartOfRound.Instance.mapScreen.IsOwner)
+            EnsureMapRendererHasValidTarget(StartOfRound.Instance.mapScreen);
         EnsureMapRendererHasValidTarget(TerminalMapRenderer);
     }
 
