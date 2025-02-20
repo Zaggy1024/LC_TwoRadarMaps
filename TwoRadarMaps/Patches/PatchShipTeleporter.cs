@@ -1,20 +1,18 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
 using HarmonyLib;
 using Unity.Netcode;
 
+using TwoRadarMaps.Utilities.IL;
+
 namespace TwoRadarMaps.Patches
 {
     [HarmonyPatch(typeof(ShipTeleporter))]
     internal static class PatchShipTeleporter
     {
-        public static readonly MethodInfo m_NetworkBehaviour___beginSendServerRpc = typeof(NetworkBehaviour).GetMethod("__beginSendServerRpc", BindingFlags.NonPublic | BindingFlags.Instance, [typeof(uint), typeof(ServerRpcParams), typeof(RpcDelivery)]);
-        public static readonly MethodInfo m_NetworkBehaviour___beginSendClientRpc = typeof(NetworkBehaviour).GetMethod("__beginSendClientRpc", BindingFlags.NonPublic | BindingFlags.Instance, [typeof(uint), typeof(ClientRpcParams), typeof(RpcDelivery)]);
-
-        public static readonly MethodInfo m_NetworkManager_get_IsListening = typeof(NetworkManager).GetMethod("get_IsListening");
+        public static readonly MethodInfo m_NetworkManager_get_IsListening = typeof(NetworkManager).GetMethod($"get_{nameof(NetworkManager.IsListening)}");
 
         public static readonly MethodInfo m_WriteCurrentTarget = typeof(PatchShipTeleporter).GetMethod(nameof(WriteCurrentTargetIndex), BindingFlags.NonPublic | BindingFlags.Static, [typeof(FastBufferWriter)]);
         public static readonly MethodInfo m_ReadTargetIndexAndSet = typeof(PatchShipTeleporter).GetMethod(nameof(ReadTargetIndexAndSet), BindingFlags.NonPublic | BindingFlags.Static, [typeof(FastBufferReader)]);
@@ -23,6 +21,8 @@ namespace TwoRadarMaps.Patches
 
         public static readonly MethodInfo m_ShipTeleporter_PressTeleportButtonServerRpcHandler = typeof(ShipTeleporter).GetMethod(nameof(ShipTeleporter.__rpc_handler_389447712), BindingFlags.NonPublic | BindingFlags.Static, [typeof(NetworkBehaviour), typeof(FastBufferReader), typeof(__RpcParams)]);
         public static readonly MethodInfo m_ShipTeleporter_PressTeleportButtonClientRpc = typeof(ShipTeleporter).GetMethod(nameof(ShipTeleporter.PressTeleportButtonClientRpc), []);
+
+        private static readonly MethodInfo m_TranspileRPCReceiveHAndlerToSetTarget = typeof(PatchShipTeleporter).GetMethod(nameof(TranspileRPCReceiveHandlerToSetTarget), BindingFlags.NonPublic | BindingFlags.Static, [typeof(IEnumerable<CodeInstruction>), typeof(ILGenerator), typeof(MethodBase)]);
 
         private static readonly List<uint> rpcMessageIDs = new(2);
 
@@ -49,35 +49,33 @@ namespace TwoRadarMaps.Patches
         [HarmonyPatch(nameof(ShipTeleporter.PressTeleportButtonClientRpc))]
         private static IEnumerable<CodeInstruction> TranspileRPCSendToWriteTargetIndex(IEnumerable<CodeInstruction> instructions, MethodBase method)
         {
-            var instructionsList = instructions.ToList();
-
-            var beginSend = instructionsList.FindIndex(insn => insn.Calls(m_NetworkBehaviour___beginSendServerRpc) || insn.Calls(m_NetworkBehaviour___beginSendClientRpc));
-            if (beginSend == -1)
-            {
-                Plugin.Instance.Logger.LogError($"No call to __beginSendServerRpc() was found.");
-                return instructions;
-            }
-
-            var rpcMessageIDInsns = instructionsList.InstructionRangeForStackItems(beginSend, 2, 2);
-            if (rpcMessageIDInsns is null
-                || rpcMessageIDInsns.Size != 1
-                || !instructionsList[rpcMessageIDInsns.Start].LoadsConstant())
-            {
-                Plugin.Instance.Logger.LogError($"No RPC message ID was found in {method}.");
-                return instructions;
-            }
-            rpcMessageIDs.Add((uint)(int)instructionsList[rpcMessageIDInsns.Start].operand);
-
             //   FastBufferWriter bufferWriter = __beginSendServerRpc(389447712u, serverRpcParams, RpcDelivery.Reliable);
             // + WriteCurrentTarget(bufferWriter);
             //   __endSendServerRpc(ref bufferWriter, 389447712u, serverRpcParams, RpcDelivery.Reliable);
-            instructionsList.InsertRange(beginSend + 1,
-                [
-                    new CodeInstruction(OpCodes.Dup),
+            var injector = new ILInjector(instructions)
+                .Find([
+                    ILMatcher.Ldarg(0),
+                    ILMatcher.Ldc().CaptureAs(out var loadMessageID),
+                    ILMatcher.Ldloc(),
+                    ILMatcher.Ldc(),
+                    ILMatcher.Predicate(insn => insn.opcode == OpCodes.Call && ((MethodBase)insn.operand).Name.StartsWith("__beginSend")),
+                    ILMatcher.Stloc().CaptureAs(out var storeWriter),
+                ])
+                .GoToMatchEnd();
+
+            if (!injector.IsValid)
+            {
+                Plugin.Instance.Logger.LogError($"No call to __beginSend[..]() was found in {method.DeclaringType.Name}.{method.Name}().");
+                return instructions;
+            }
+
+            injector
+                .Insert([
+                    storeWriter.StlocToLdloc(),
                     new CodeInstruction(OpCodes.Call, m_WriteCurrentTarget),
                 ]);
-
-            return instructionsList;
+            rpcMessageIDs.Add((uint)(int)loadMessageID.operand);
+            return injector.ReleaseInstructions();
         }
 
         [HarmonyPostfix]
@@ -94,58 +92,13 @@ namespace TwoRadarMaps.Patches
 
         private static void PatchRPCReceiveHandlers(Harmony harmony)
         {
-            var transpilerMethod = typeof(PatchShipTeleporter).GetMethod(nameof(TranspileRPCReceiveHandlerToSetTarget), BindingFlags.NonPublic | BindingFlags.Static, [typeof(IEnumerable<CodeInstruction>), typeof(ILGenerator), typeof(MethodBase)]);
-
             foreach (var rpcMessageID in rpcMessageIDs)
             {
                 var handlerMethod = NetworkManager.__rpc_func_table[rpcMessageID].GetMethodInfo();
                 harmony.CreateProcessor(handlerMethod)
-                    .AddTranspiler(transpilerMethod)
+                    .AddTranspiler(m_TranspileRPCReceiveHAndlerToSetTarget)
                     .Patch();
             }
-        }
-
-        private static IEnumerable<CodeInstruction> TranspileRPCReceiveHandlerToSetTarget(IEnumerable<CodeInstruction> instructions, ILGenerator generator, MethodBase method)
-        {
-            var instructionsList = instructions.ToList();
-
-            var checkIsListening = instructionsList.FindIndexOfSequence([
-                insn => insn.IsLdloc(),
-                insn => insn.Calls(m_NetworkManager_get_IsListening),
-                insn => insn.opcode == OpCodes.Brtrue || insn.opcode == OpCodes.Brtrue_S,
-            ]);
-            var isListeningLabel = (Label)instructionsList[checkIsListening.End - 1].operand;
-
-            var isListening = instructionsList.FindIndex(checkIsListening.End, insn => insn.labels.Contains(isListeningLabel));
-            var endListeningBlock = instructionsList.FindIndex(isListening, insn => insn.opcode == OpCodes.Ret);
-
-            // NetworkManager networkManager = target.NetworkManager;
-            // if (networkManager is null || !networkManager.IsListening)
-            //     return;
-            // var originalIndex = ReadTargetIndexAndSet(reader);
-            // ...
-            // SetTarget(originalIndex);
-
-            instructionsList[isListening].labels.Remove(isListeningLabel);
-
-            var originalIndexVar = generator.DeclareLocal(typeof(int));
-            CodeInstruction[] insertAtStart = [
-                new CodeInstruction(OpCodes.Ldarg_1).WithLabels(isListeningLabel),
-                new CodeInstruction(OpCodes.Call, m_ReadTargetIndexAndSet),
-                new CodeInstruction(OpCodes.Stloc, originalIndexVar),
-            ];
-            instructionsList.InsertRange(isListening, insertAtStart);
-            endListeningBlock += insertAtStart.Length;
-
-            CodeInstruction[] insertAtEnd = [
-                new CodeInstruction(OpCodes.Call, Reflection.m_StartOfRound_Instance),
-                new CodeInstruction(OpCodes.Ldfld, Reflection.f_StartOfRound_mapScreen),
-                new CodeInstruction(OpCodes.Ldloc, originalIndexVar),
-                new CodeInstruction(OpCodes.Call, m_Plugin_SetTargetIndex),
-            ];
-            instructionsList.InsertRange(endListeningBlock, insertAtEnd);
-
-            return instructionsList;
         }
 
         private static int ReadTargetIndexAndSet(FastBufferReader reader)
@@ -155,6 +108,56 @@ namespace TwoRadarMaps.Patches
             reader.ReadValue(out int targetIndex);
             Plugin.SetTargetIndex(mapRenderer, targetIndex);
             return oldIndex;
+        }
+
+        private static IEnumerable<CodeInstruction> TranspileRPCReceiveHandlerToSetTarget(IEnumerable<CodeInstruction> instructions, ILGenerator generator, MethodBase method)
+        {
+            //   NetworkManager networkManager = target.NetworkManager;
+            //   if (networkManager is null || !networkManager.IsListening)
+            //       return;
+            // + var originalIndex = ReadTargetIndexAndSet(reader);
+            //   ...
+            // + SetTarget(originalIndex);
+
+            var injector = new ILInjector(instructions)
+                .Find([
+                    ILMatcher.Ldloc(),
+                    ILMatcher.Callvirt(m_NetworkManager_get_IsListening),
+                    ILMatcher.Opcode(OpCodes.Brtrue).CaptureLabelOperandAs(out var isListeningLabel),
+                ])
+                .FindLabel(isListeningLabel);
+
+            if (!injector.IsValid)
+            {
+                Plugin.Instance.Logger.LogError($"No access of NetworkManager.IsListening was found in {method.DeclaringType.Name}.{method.Name}().");
+                return instructions;
+            }
+
+            var originalIndexLocal = generator.DeclareLocal(typeof(int));
+            injector
+                .InsertAfterBranch([
+                    new(OpCodes.Ldarg_1),
+                    new(OpCodes.Call, m_ReadTargetIndexAndSet),
+                    new(OpCodes.Stloc, originalIndexLocal),
+                ])
+                .Find([
+                    ILMatcher.Opcode(OpCodes.Ret),
+                ]);
+
+            if (!injector.IsValid)
+            {
+                Plugin.Instance.Logger.LogError($"No return instruction was found in {method.DeclaringType.Name}.{method.Name}().");
+                return instructions;
+            }
+
+            return injector
+                .Insert([
+                    new(OpCodes.Call, Reflection.m_StartOfRound_Instance),
+                    new(OpCodes.Ldfld, Reflection.f_StartOfRound_mapScreen),
+                    new(OpCodes.Ldloc, originalIndexLocal),
+                    new(OpCodes.Call, m_Plugin_SetTargetIndex),
+                ])
+                .ReleaseInstructions();
         }
     }
 }

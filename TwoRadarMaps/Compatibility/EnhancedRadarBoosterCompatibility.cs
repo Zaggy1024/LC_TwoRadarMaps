@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
@@ -8,10 +7,11 @@ using System.Runtime.CompilerServices;
 using BepInEx.Bootstrap;
 using EnhancedRadarBooster;
 using HarmonyLib;
+using ImmersiveCompany.Patches;
 using UnityEngine;
 
 using TwoRadarMaps.Patches;
-using ImmersiveCompany.Patches;
+using TwoRadarMaps.Utilities.IL;
 
 namespace TwoRadarMaps.Compatibility;
 
@@ -21,6 +21,7 @@ internal static class EnhancedRadarBoosterCompatibility
     internal const string IMMERSIVE_COMPANY_MOD_ID = "ImmersiveCompany";
 
     private static MethodInfo m_MapCameraFocusOnPositionPostfixTranspiler;
+    private static MethodInfo m_Camera_set_orthographicSize;
 
     internal static void Initialize(Harmony harmony)
     {
@@ -33,12 +34,16 @@ internal static class EnhancedRadarBoosterCompatibility
             return;
         }
 
+        m_Camera_set_orthographicSize = typeof(Camera).GetMethod($"set_{nameof(Camera.orthographicSize)}");
+
         if (Chainloader.PluginInfos.ContainsKey(ENHANCED_RADAR_BOOSTER_MOD_ID))
             InitializeForEnhancedRadarBooster(harmony);
 
         if (Chainloader.PluginInfos.ContainsKey(IMMERSIVE_COMPANY_MOD_ID))
             InitializeForImmersiveCompany(harmony);
     }
+
+    private static bool patchAppliedSuccessfully = false;
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void InitializeForEnhancedRadarBooster(Harmony harmony)
@@ -62,7 +67,10 @@ internal static class EnhancedRadarBoosterCompatibility
             Plugin.Instance.Logger.LogError(e);
         }
 
-        Plugin.Instance.Logger.LogInfo($"Finished patching EnhancedRadarBooster for compatibility with the zoom command.");
+        if (patchAppliedSuccessfully)
+            Plugin.Instance.Logger.LogInfo($"Finished patching EnhancedRadarBooster for compatibility with the zoom command.");
+        else
+            Plugin.Instance.Logger.LogError($"Failed to patch EnhancedRadarBooster for compatibility with the zoom command.");
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -87,57 +95,59 @@ internal static class EnhancedRadarBoosterCompatibility
             Plugin.Instance.Logger.LogError(e);
         }
 
-        Plugin.Instance.Logger.LogInfo($"Finished patching ImmersiveCompany for compatibility with the zoom command.");
+        if (patchAppliedSuccessfully)
+            Plugin.Instance.Logger.LogInfo($"Finished patching ImmersiveCompany for compatibility with the zoom command.");
+        else
+            Plugin.Instance.Logger.LogError($"Failed to patch ImmersiveCompany for compatibility with the zoom command.");
     }
 
     private static IEnumerable<CodeInstruction> MapCameraFocusOnPositionPostfixTranspiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator, MethodBase method)
     {
-        var m_Camera_set_orthographicSize = typeof(Camera).GetMethod($"set_{nameof(Camera.orthographicSize)}");
-        var f_TerminalCommands_CycleZoomNode = typeof(TerminalCommands).GetField(nameof(TerminalCommands.CycleZoomNode));
-
-        var instructionsList = instructions.ToList();
-
-        // Find:
-        //   __instance.mapCamera.orthographicSize = [value];
-        // and transform it into:
-        //   if (__instance == StartOfRound.Instance.mapScreen)
-        //     __instance.mapCamera.orthographicSize = [value];
-        var setOrthographicSize = 0;
-        while (true)
-        {
-            setOrthographicSize = instructionsList.FindIndex(setOrthographicSize, insn => insn.Calls(m_Camera_set_orthographicSize));
-
-            if (setOrthographicSize == -1)
-                break;
-
-            var skipPopsLabel = generator.DefineLabel();
-            instructionsList[setOrthographicSize].labels.Add(skipPopsLabel);
-
-            var skipAssignmentLabel = generator.DefineLabel();
-            instructionsList[setOrthographicSize + 1].labels.Add(skipAssignmentLabel);
-
-            CodeInstruction[] instructionsToInsert = [
-                new(OpCodes.Ldsfld, f_TerminalCommands_CycleZoomNode),
-                new(OpCodes.Brfalse_S, skipPopsLabel),
-                new(OpCodes.Ldarg_0),
-                new(OpCodes.Call, Reflection.m_StartOfRound_Instance),
-                new(OpCodes.Ldfld, Reflection.f_StartOfRound_mapScreen),
-                new(OpCodes.Beq_S, skipPopsLabel),
-                new(OpCodes.Pop),
-                new(OpCodes.Pop),
-                new(OpCodes.Br_S, skipAssignmentLabel),
-            ];
-
-            instructionsList.InsertRange(setOrthographicSize, instructionsToInsert);
-            setOrthographicSize += instructionsToInsert.Length + 1;
-        }
-
         // Transform:
         //   StartOfRound.radarCanvas
         // into:
         //   (__instance == Plugin.terminalMapRenderer ? Plugin.terminalMapScreenUICanvas : StartOfRound.radarCanvas)
-        instructionsList.InsertTerminalField(generator, new(OpCodes.Ldarg_0), Reflection.f_StartOfRound_radarCanvas, Reflection.f_Plugin_terminalMapScreenUICanvas);
+        var injector = new ILInjector(instructions, generator)
+            .InsertTerminalField(new(OpCodes.Ldarg_0), Reflection.f_StartOfRound_radarCanvas, Reflection.f_Plugin_terminalMapScreenUICanvas);
 
-        return instructionsList;
+        patchAppliedSuccessfully = false;
+
+        while (true) {
+            // Find:
+            //   __instance.mapCamera.orthographicSize = [value];
+            // and transform it into:
+            //   if ((object)TerminalCommands.CycleZoomNode != null && __instance == StartOfRound.Instance.mapScreen)
+            //     __instance.mapCamera.orthographicSize = [value];
+            injector
+                .Find([
+                    ILMatcher.Callvirt(m_Camera_set_orthographicSize),
+                ]);
+
+            if (!injector.IsValid)
+                break;
+
+            injector
+                .Forward(1)
+                .AddLabel(out var skipSettingSizeLabel)
+                .Back(1)
+                .GoToPush(1)
+                .AddLabel(out var setSizeLabel)
+                .Insert([
+                    new(OpCodes.Ldsfld, typeof(TerminalCommands).GetField(nameof(TerminalCommands.CycleZoomNode))),
+                    new(OpCodes.Brfalse_S, setSizeLabel),
+                    new(OpCodes.Ldarg_0),
+                    new(OpCodes.Call, Reflection.m_StartOfRound_Instance),
+                    new(OpCodes.Ldfld, Reflection.f_StartOfRound_mapScreen),
+                    new(OpCodes.Beq_S, setSizeLabel),
+                    new(OpCodes.Br_S, skipSettingSizeLabel),
+                ])
+                .Find([
+                    ILMatcher.Callvirt(m_Camera_set_orthographicSize),
+                ])
+                .GoToMatchEnd();
+            patchAppliedSuccessfully = true;
+        }
+
+        return injector.ReleaseInstructions();
     }
 }

@@ -5,6 +5,8 @@ using HarmonyLib;
 using TMPro;
 using UnityEngine;
 
+using TwoRadarMaps.Utilities.IL;
+
 namespace TwoRadarMaps.Patches;
 
 [HarmonyPatch(typeof(Terminal))]
@@ -63,7 +65,7 @@ internal static class PatchTerminal
         }
         terminalMapCameraObject.name = "TerminalMapCamera";
 
-        var terminalMapScreenUI = UnityEngine.Object.Instantiate(mainMapScreenUI, itemSystems.transform, false);
+        var terminalMapScreenUI = Object.Instantiate(mainMapScreenUI, itemSystems.transform, false);
         var terminalMapScreenUICanvas = terminalMapScreenUI?.GetComponent<Canvas>();
         terminalMapScreenUICanvas.worldCamera = terminalMapCamera;
         if (terminalMapScreenUICanvas == null)
@@ -166,9 +168,9 @@ internal static class PatchTerminal
     [HarmonyPatch(nameof(Terminal.CheckForPlayerNameCommand))]
     static IEnumerable<CodeInstruction> TranspileRunTerminalEvents(IEnumerable<CodeInstruction> instructions)
     {
-        var instructionsList = instructions.ToList();
-        instructionsList.ReplaceMainMapWithTerminalMap();
-        return instructionsList;
+        return new ILInjector(instructions)
+            .ReplaceMainMapWithTerminalMap()
+            .ReleaseInstructions();
     }
 
     [HarmonyPrefix]

@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -9,6 +8,7 @@ using UnityEngine;
 using BepInEx.Bootstrap;
 
 using TwoRadarMaps.Compatibility;
+using TwoRadarMaps.Utilities.IL;
 
 namespace TwoRadarMaps.Patches;
 
@@ -46,17 +46,22 @@ internal static class PatchVanillaBugs
     [HarmonyPatch(typeof(PlayerControllerB), nameof(PlayerControllerB.SendNewPlayerValuesClientRpc))]
     static IEnumerable<CodeInstruction> SendNewPlayerValuesClientRpcTranspiler(IEnumerable<CodeInstruction> instructions)
     {
-        var m_ManualCameraRenderer_ChangeNameOfTargetTransform = typeof(ManualCameraRenderer).GetMethod(nameof(ManualCameraRenderer.ChangeNameOfTargetTransform), [typeof(Transform), typeof(string)]);
-
-        var instructionsList = instructions.ToList();
-
         // Correct the radar target index, otherwise the re-sorted list will cause names to be mismatched with their
         // transforms.
         // - StartOfRound.Instance.mapScreen.radarTargets[i].name = playerName;
         // + StartOfRound.Instance.mapScreen.ChangeNameOfTargetTransform(StartOfRound.Instance.allPlayerScripts[i].transform, playerName);
-        var setName = instructionsList.FindIndex(insn => insn.StoresField(Reflection.f_TransformAndName_name));
+        var injector = new ILInjector(instructions)
+            .Find([
+                ILMatcher.Call(Reflection.m_StartOfRound_Instance),
+                ILMatcher.Ldfld(Reflection.f_StartOfRound_mapScreen),
+                ILMatcher.Ldfld(Reflection.f_ManualCameraRenderer_radarTargets),
+                ILMatcher.Ldloc().CaptureAs(out var loadIndex),
+                ILMatcher.Callvirt(Reflection.m_List_TransformAndName_get_Item),
+                ILMatcher.Ldloc().CaptureAs(out var loadName),
+                ILMatcher.Stfld(Reflection.f_TransformAndName_name),
+            ]);
 
-        if (setName == -1)
+        if (!injector.IsValid)
         {
             if (!Chainloader.PluginInfos.ContainsKey(LobbyControlCompatibility.MOD_ID))
             {
@@ -67,36 +72,19 @@ internal static class PatchVanillaBugs
             return instructions;
         }
 
-        var getTransformAndName = instructionsList.InstructionRangeForStackItems(setName, 1, 1);
-
-        var loadTransformIndex = instructionsList.InstructionRangeForStackItems(getTransformAndName.End - 1, 0, 0);
-
-        instructionsList.RemoveAt(setName);
-        instructionsList.RemoveAbsoluteRange(loadTransformIndex.End, getTransformAndName.End);
-        instructionsList.RemoveAbsoluteRange(getTransformAndName.Start, loadTransformIndex.Start);
-
-        var insertionIndex = getTransformAndName.Start;
-        CodeInstruction[] loadPlayerScriptsInstructions = [
-            new CodeInstruction(OpCodes.Call, Reflection.m_StartOfRound_Instance),
-            new CodeInstruction(OpCodes.Ldfld, Reflection.f_StartOfRound_mapScreen),
-            new CodeInstruction(OpCodes.Call, Reflection.m_StartOfRound_Instance),
-            new CodeInstruction(OpCodes.Ldfld, Reflection.f_StartOfRound_allPlayerScripts),
-        ];
-        instructionsList.InsertRange(insertionIndex, loadPlayerScriptsInstructions);
-        insertionIndex += loadPlayerScriptsInstructions.Length;
-        insertionIndex += loadTransformIndex.Size;
-
-        CodeInstruction[] loadPlayerTransformInstructions = [
-            new CodeInstruction(OpCodes.Ldelem, typeof(PlayerControllerB)),
-            new CodeInstruction(OpCodes.Call, Reflection.m_Component_Transform),
-        ];
-        instructionsList.InsertRange(insertionIndex, loadPlayerTransformInstructions);
-        insertionIndex += loadPlayerTransformInstructions.Length;
-        insertionIndex += setName - getTransformAndName.End;
-
-        instructionsList.Insert(insertionIndex, new CodeInstruction(OpCodes.Call, m_ManualCameraRenderer_ChangeNameOfTargetTransform));
-
-        return instructionsList;
+        return injector
+            .ReplaceLastMatch([
+                new(OpCodes.Call, Reflection.m_StartOfRound_Instance),
+                new(OpCodes.Ldfld, Reflection.f_StartOfRound_mapScreen),
+                new(OpCodes.Call, Reflection.m_StartOfRound_Instance),
+                new(OpCodes.Ldfld, Reflection.f_StartOfRound_allPlayerScripts),
+                loadIndex,
+                new(OpCodes.Ldelem, typeof(PlayerControllerB)),
+                new(OpCodes.Call, Reflection.m_Component_Transform),
+                loadName,
+                new(OpCodes.Call, typeof(ManualCameraRenderer).GetMethod(nameof(ManualCameraRenderer.ChangeNameOfTargetTransform), [typeof(Transform), typeof(string)]))
+            ])
+            .ReleaseInstructions();
     }
 
     private static void UpdateMonitoredPlayerNames()
@@ -110,14 +98,23 @@ internal static class PatchVanillaBugs
     [HarmonyTranspiler]
     public static IEnumerable<CodeInstruction> OnClientConnectTranspiler(IEnumerable<CodeInstruction> instructions)
     {
-        var m_OnPlayerConnectedClientRpc = typeof(StartOfRound).GetMethod(nameof(StartOfRound.OnPlayerConnectedClientRpc), BindingFlags.NonPublic | BindingFlags.Instance);
+        var injector = new ILInjector(instructions)
+            .Find([
+                ILMatcher.Call(typeof(StartOfRound).GetMethod(nameof(StartOfRound.OnPlayerConnectedClientRpc), BindingFlags.NonPublic | BindingFlags.Instance)),
+            ])
+            .GoToMatchEnd();
 
-        foreach (var instruction in instructions)
+        if (!injector.IsValid)
         {
-            yield return instruction;
-            if (instruction.Calls(m_OnPlayerConnectedClientRpc))
-                yield return new CodeInstruction(OpCodes.Call, typeof(PatchVanillaBugs).GetMethod(nameof(SynchronizeMapTargetsToNewClient), BindingFlags.NonPublic | BindingFlags.Static));
+            Plugin.Instance.Logger.LogError($"Failed to find the call to {nameof(StartOfRound.OnPlayerConnectedClientRpc)} in {nameof(StartOfRound)}.{nameof(StartOfRound.OnClientConnect)}().");
+            return instructions;
         }
+
+        return injector
+            .Insert([
+                new(OpCodes.Call, typeof(PatchVanillaBugs).GetMethod(nameof(SynchronizeMapTargetsToNewClient), BindingFlags.NonPublic | BindingFlags.Static)),
+            ])
+            .ReleaseInstructions();
     }
 
     private static void SynchronizeMapTargetsToNewClient()
