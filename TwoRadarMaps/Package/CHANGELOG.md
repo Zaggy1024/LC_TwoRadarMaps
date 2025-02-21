@@ -1,3 +1,7 @@
+## Version 1.5.0
+- Fixed clients' targets in the terminal being invalid initially after joining a game.
+- Rewrote all transpilers using newer injection utilities.
+
 ## Version 1.4.3
 - Fixed the terminal map rendering unnecessarily when [TerminalStuff](https://github.com/darmuh/TerminalStuff) enables the terminal UI while not interacting with it.
 
