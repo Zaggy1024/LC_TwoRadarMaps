@@ -142,10 +142,7 @@ internal class ILInjector(IEnumerable<CodeInstruction> instructions, ILGenerator
     public ILInjector FindLabel(Label label)
     {
         if (label == default)
-        {
-            UnityEngine.Debug.Log($"Default label.\n{new System.Diagnostics.StackTrace()}");
             return this;
-        }
 
         matchEnd = index;
 
@@ -371,9 +368,11 @@ internal class ILInjector(IEnumerable<CodeInstruction> instructions, ILGenerator
     public ILInjector RemoveLastMatch()
     {
         GetLastMatchRange(out var start, out var size);
+        var labels = instructions[start].labels;
         instructions.RemoveRange(start, size);
         index = start;
         matchEnd = start;
+        instructions[start].labels.AddRange(labels);
         return this;
     }
 

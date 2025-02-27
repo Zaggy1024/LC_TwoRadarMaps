@@ -115,7 +115,7 @@ internal static class PatchManualCameraRenderer
                 ILMatcher.Ldarg(0),
                 ILMatcher.Ldfld(Reflection.f_ManualCameraRenderer_radarTargets),
                 ILMatcher.Callvirt(typeof(List<TransformAndName>).GetMethod($"get_{nameof(List<TransformAndName>.Count)}")),
-                ILMatcher.Opcode(OpCodes.Blt).CaptureLabelOperandAs(out var targetIsInBoundsLabel),
+                ILMatcher.Opcode(OpCodes.Blt).CaptureOperandAs(out Label targetIsInBoundsLabel),
             ])
             .FindLabel(targetIsInBoundsLabel);
 

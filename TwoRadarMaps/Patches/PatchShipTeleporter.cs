@@ -123,7 +123,7 @@ namespace TwoRadarMaps.Patches
                 .Find([
                     ILMatcher.Ldloc(),
                     ILMatcher.Callvirt(m_NetworkManager_get_IsListening),
-                    ILMatcher.Opcode(OpCodes.Brtrue).CaptureLabelOperandAs(out var isListeningLabel),
+                    ILMatcher.Opcode(OpCodes.Brtrue).CaptureOperandAs(out Label isListeningLabel),
                 ])
                 .FindLabel(isListeningLabel);
 
