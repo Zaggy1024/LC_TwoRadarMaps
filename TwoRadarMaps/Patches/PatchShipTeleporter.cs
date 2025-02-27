@@ -94,8 +94,13 @@ namespace TwoRadarMaps.Patches
         {
             foreach (var rpcMessageID in rpcMessageIDs)
             {
-                var handlerMethod = NetworkManager.__rpc_func_table[rpcMessageID].GetMethodInfo();
-                harmony.CreateProcessor(handlerMethod)
+                if (!NetworkManager.__rpc_func_table.TryGetValue(rpcMessageID, out var rpcDelegate))
+                {
+                    Plugin.Instance.Logger.LogError($"Failed to find RPC message handler with ID {rpcMessageID}.");
+                    Plugin.Instance.Logger.LogError("This may cause errors when using the ship teleporter.");
+                    continue;
+                }
+                harmony.CreateProcessor(rpcDelegate.GetMethodInfo())
                     .AddTranspiler(m_TranspileRPCReceiveHAndlerToSetTarget)
                     .Patch();
             }
