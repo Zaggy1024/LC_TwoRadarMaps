@@ -55,7 +55,7 @@ namespace TwoRadarMaps.Patches
             var injector = new ILInjector(instructions)
                 .Find([
                     ILMatcher.Ldarg(0),
-                    ILMatcher.Ldc().CaptureAs(out var loadMessageID),
+                    ILMatcher.Ldc().CaptureOperandAs(out int messageID),
                     ILMatcher.Ldloc(),
                     ILMatcher.Ldc(),
                     ILMatcher.Predicate(insn => insn.opcode == OpCodes.Call && ((MethodBase)insn.operand).Name.StartsWith("__beginSend")),
@@ -74,7 +74,7 @@ namespace TwoRadarMaps.Patches
                     storeWriter.StlocToLdloc(),
                     new CodeInstruction(OpCodes.Call, m_WriteCurrentTarget),
                 ]);
-            rpcMessageIDs.Add((uint)(int)loadMessageID.operand);
+            rpcMessageIDs.Add((uint)messageID);
             return injector.ReleaseInstructions();
         }
 
