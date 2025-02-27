@@ -31,19 +31,4 @@ public static class Reflection
     {
         return type.GetMethod(name, bindingFlags, null, parameters, null);
     }
-
-    public static MethodInfo GetGenericMethod(this Type type, string name, Type[] parameters, Type[] genericArgs)
-    {
-        var methods = type.GetMethods();
-        foreach (var method in methods)
-        {
-            if (method.Name != name)
-                continue;
-            if (!method.IsGenericMethodDefinition)
-                continue;
-            return method.MakeGenericMethod(genericArgs);
-        }
-
-        return null;
-    }
 }
