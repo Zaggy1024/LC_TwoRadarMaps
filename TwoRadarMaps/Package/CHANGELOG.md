@@ -1,3 +1,6 @@
+## Version 1.6.0
+- Updated to support v70, with its head mounted cams and exit path lines.
+
 ## Version 1.5.0
 - Fixed clients' targets in the terminal being invalid initially after joining a game.
 - Rewrote all transpilers using newer injection utilities.
