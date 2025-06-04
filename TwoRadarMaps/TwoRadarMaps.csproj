@@ -11,7 +11,7 @@
     <ItemGroup>
         <PackageReference Include="BepInEx.Core" Version="5.4.21.0" />
         <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.1" PrivateAssets="all" />
-        <PackageReference Include="LethalCompany.GameLibs.Steam" Version="64.0.0-ngd.0" Private="False" Publicize="true" />
+        <PackageReference Include="LethalCompany.GameLibs.Steam" Version="70.0.0-ngd.0" Private="False" Publicize="true" />
         <PackageReference Include="Zaggy1024-OpenBodyCams" Version="3.*" Publicize="true" />
         <PackageReference Include="MrHydralisk-EnhancedRadarBooster" Version="1.7.*" />
         <PackageReference Include="Regis-ImmersiveCompany" Version="0.3.*" Publicize="true" />

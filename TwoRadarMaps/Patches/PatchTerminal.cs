@@ -4,6 +4,7 @@ using System.Linq;
 using HarmonyLib;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 using TwoRadarMaps.Utilities.IL;
 
@@ -85,21 +86,54 @@ internal static class PatchTerminal
         Object.Destroy(planetVideo);
         Object.Destroy(planetDescription);
 
-        var terminalMapShipArrowUI = terminalMapScreenUI.transform.Find("ArrowUI")?.gameObject;
-        var terminalMapShipArrowPointer = terminalMapShipArrowUI.transform.Find("ArrowContainer");
+        var terminalMapShipArrowUI = terminalMapScreenUI.transform.Find(mainMapRenderer.shipArrowUI.name)?.gameObject;
+        var terminalMapShipArrowPointer = terminalMapShipArrowUI.transform.Find(mainMapRenderer.shipArrowPointer.name);
         if (terminalMapShipArrowUI == null || terminalMapShipArrowPointer == null)
         {
             Plugin.Instance.Logger.LogError("Failed to get cloned ship arrow pointer.");
             return;
         }
 
-        var terminalMapPlayerName = terminalMapScreenUI.transform.Find("PlayerBeingMonitored")?.GetComponent<TextMeshProUGUI>();
-        terminalMapPlayerName.enabled = true;
-        if (terminalMapShipArrowUI == null || terminalMapShipArrowPointer == null)
+        var terminalMapSignalLostUI = terminalMapScreenUI.transform.Find(mainMapRenderer.LostSignalUI.name)?.gameObject;
+        if (terminalMapSignalLostUI == null)
         {
-            Plugin.Instance.Logger.LogError("Failed to get cloned 'MONITORING:' text UI.");
+            Plugin.Instance.Logger.LogError("Failed to get cloned signal lost text UI.");
             return;
         }
+
+        var terminalMonitoringPlayerContainer = terminalMapScreenUI.transform.Find("MonitoringPlayerUIContainer");
+
+        var terminalMapPlayerName = terminalMonitoringPlayerContainer.Find("PlayerBeingMonitored")?.GetComponent<TextMeshProUGUI>();
+        if (terminalMapPlayerName == null)
+        {
+            Plugin.Instance.Logger.LogError("Failed to get cloned player name text UI.");
+            return;
+        }
+        terminalMapPlayerName.enabled = true;
+
+        var terminalMapHeadMountedCamUI = terminalMonitoringPlayerContainer.Find(mainMapRenderer.headMountedCamUI.name)?.GetComponent<RawImage>();
+        if (terminalMapHeadMountedCamUI == null)
+        {
+            Plugin.Instance.Logger.LogError("Failed to get cloned head mounted cam view UI.");
+            return;
+        }
+        terminalMapHeadMountedCamUI.enabled = true;
+
+        var terminalMapLocalPlayerPlaceholder = terminalMonitoringPlayerContainer.Find(mainMapRenderer.localPlayerPlaceholder.name)?.GetComponent<Image>();
+        if (terminalMapLocalPlayerPlaceholder == null)
+        {
+            Plugin.Instance.Logger.LogError("Failed to get the local player placeholder head mounted cam view UI.");
+            return;
+        }
+        terminalMapLocalPlayerPlaceholder.enabled = true;
+
+        var terminalMapCompass = terminalMonitoringPlayerContainer.Find(mainMapRenderer.compassRose.name)?.GetComponent<Image>();
+        if (terminalMapCompass == null)
+        {
+            Plugin.Instance.Logger.LogError("Failed to get cloned compass UI.");
+            return;
+        }
+        terminalMapCompass.enabled = true;
 
         var newAnimator = terminalMapCameraObject.GetComponentInChildren<Animator>();
         if (newAnimator == null)
@@ -108,12 +142,23 @@ internal static class PatchTerminal
             return;
         }
 
-        var newLight = terminalMapCameraObject.GetComponentInChildren<Light>();
-        if (newLight == null)
+        var terminalMapHeadMountedCam = Object.Instantiate(mainMapRenderer.headMountedCam, itemSystems.transform, false);
+        if (terminalMapHeadMountedCam == null)
         {
-            Plugin.Instance.Logger.LogError("Failed to find new map night vision light.");
+            Plugin.Instance.Logger.LogError("Failed to create a head mounted camera for the terminal map.");
             return;
         }
+        terminalMapHeadMountedCam.name = "TerminalHeadMountedCamera";
+        terminalMapHeadMountedCam.targetTexture = new RenderTexture(mainMapRenderer.headMountedCam.targetTexture);
+        terminalMapHeadMountedCamUI.texture = terminalMapHeadMountedCam.targetTexture;
+
+        var terminalExitLine = Object.Instantiate(mainMapRenderer.lineFromRadarTargetToExit, itemSystems.transform, false);
+        if (terminalExitLine == null)
+        {
+            Plugin.Instance.Logger.LogError("Failed to create a new map exit line for the terminal.");
+            return;
+        }
+        terminalExitLine.name = "TerminalMapExitLine";
 
         var terminalMesh = GameObject.Find("Environment/HangarShip/Terminal")?.GetComponentInChildren<MeshRenderer>();
         if (terminalMesh == null)
@@ -123,6 +168,8 @@ internal static class PatchTerminal
         }
 
         var terminalMapRenderer = terminalObject.AddComponent<ManualCameraRenderer>();
+        terminalMapRenderer.cameraNearPlane = mainMapRenderer.cameraNearPlane;
+        terminalMapRenderer.cameraFarPlane = mainMapRenderer.cameraFarPlane;
 
         terminalMapRenderer.cam = terminalMapCamera;
         terminalMapRenderer.mapCamera = terminalMapCamera;
@@ -132,12 +179,25 @@ internal static class PatchTerminal
             filterMode = Plugin.TextureFiltering.Value,
         };
 
+        terminalMapRenderer.mapCameraStationaryUI = mainMapRenderer.mapCameraStationaryUI;
+
         // Our terminal map will enable and disable the arrow UI when it is active.
         terminalMapRenderer.shipArrowUI = terminalMapShipArrowUI;
         terminalMapRenderer.shipArrowPointer = terminalMapShipArrowPointer;
+        terminalMapRenderer.compassRose = terminalMapCompass;
+
+        // Head mounted cam setup:
+        terminalMapRenderer.headMountedCam = terminalMapHeadMountedCam;
+        terminalMapRenderer.headMountedCamPositionOffset = mainMapRenderer.headMountedCamPositionOffset;
+        terminalMapRenderer.headMountedCamRotationOffset = mainMapRenderer.headMountedCamRotationOffset;
+        terminalMapRenderer.headMountedCamUI = terminalMapHeadMountedCamUI;
+        terminalMapRenderer.localPlayerPlaceholder = terminalMapLocalPlayerPlaceholder;
+        terminalMapRenderer.LostSignalUI = terminalMapSignalLostUI;
 
         terminalMapRenderer.mapCameraAnimator = newAnimator;
-        terminalMapRenderer.mapCameraLight = newLight;
+        terminalMapRenderer.lineFromRadarTargetToExit = terminalExitLine;
+
+        terminalMapRenderer.targetedPlayer = mainMapRenderer.targetedPlayer;
 
         var viewMonitorNode = Plugin.Terminal.terminalNodes
             .allKeywords.FirstOrDefault(keyword => keyword.word == "view")?

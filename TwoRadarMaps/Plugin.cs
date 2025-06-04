@@ -25,7 +25,7 @@ public class Plugin : BaseUnityPlugin
 {
     private const string MOD_NAME = "TwoRadarMaps";
     private const string MOD_UNIQUE_NAME = "Zaggy1024." + MOD_NAME;
-    private const string MOD_VERSION = "1.5.0";
+    private const string MOD_VERSION = "1.6.0";
 
     internal static readonly Harmony Harmony = new(MOD_UNIQUE_NAME);
 
@@ -43,7 +43,8 @@ public class Plugin : BaseUnityPlugin
     public static ConfigEntry<bool> EnableTeleportCommand;
     public static ConfigEntry<bool> EnableTeleportCommandShorthand;
 
-    const string DEFAULT_ZOOM_LEVELS = "19.7, 29.55, 39.4";
+    const string OLD_DEFAULT_ZOOM_LEVELS = "19.7, 29.55, 39.4";
+    const string DEFAULT_ZOOM_LEVELS = "30, 45, 60";
 
     internal static Terminal Terminal;
     internal static ShipTeleporter Teleporter;
@@ -53,6 +54,8 @@ public class Plugin : BaseUnityPlugin
     public static Canvas TerminalMapScreenUICanvas;
     public static float[] TerminalMapZoomLevelOptions;
     public static int TerminalMapZoomLevel;
+
+    public static ConfigEntry<string> LastConfigVersion;
 
     public void Awake()
     {
@@ -78,7 +81,7 @@ public class Plugin : BaseUnityPlugin
             "The orthographic sizes to use for each zoom level.\n" +
             "A list of comma-separated numbers.\n" +
             "Lower values indicate a smaller field of view.\n" +
-            "100% zoom is 19.7.");
+            "100% zoom is 30.");
         ZoomLevels.SettingChanged += (_, _) => UpdateZoomFactors();
         DefaultZoomLevel = Config.Bind("Zoom", "DefaultLevel", 0, "The zoom factor to select by default. The first zoom level is 0.");
 
@@ -87,17 +90,36 @@ public class Plugin : BaseUnityPlugin
         EnableTeleportCommandShorthand = Config.Bind("TeleportCommand", "ShorthandEnabled", true, "Enable a 'tp' shorthand for the 'activate teleport' command. Will only function if the longhand command is enabled.");
         EnableTeleportCommandShorthand.SettingChanged += (_, _) => TerminalCommands.Initialize();
 
+        LastConfigVersion = Config.Bind("Debug", "LastConfigVersion", "", "The last version of the mod that loaded/saved this config file. Used for setting migration.");
+
+        MigrateConfigOptions();
+
         Harmony.PatchAll(typeof(PatchTerminal));
         Harmony.PatchAll(typeof(PatchVanillaBugs));
         Harmony.PatchAll(typeof(PatchManualCameraRenderer));
         Harmony.PatchAll(typeof(PatchShipTeleporter));
 
-        // Enable each map's night vision light only when rendering that map camera.
-        // This allows night vision to work outside the facility.
+        // Enable each map's line to the main exit only when rendering that map camera.
         RenderPipelineManager.beginCameraRendering += BeforeCameraRendering;
 
         OpenBodyCamsCompatibility.Initialize();
         EnhancedRadarBoosterCompatibility.Initialize(Harmony);
+    }
+
+    private void MigrateConfigOptions()
+    {
+        if (!Version.TryParse(LastConfigVersion.Value, out var lastVersion))
+            lastVersion = new Version(1, 5, 0);
+
+        Logger.LogInfo($"Last config version is {lastVersion}.");
+
+        if (lastVersion < new Version(1, 6, 0) && ZoomLevels.Value == OLD_DEFAULT_ZOOM_LEVELS)
+        {
+            Logger.LogInfo($"{ZoomLevels.Definition} is being migrated to factors that correspond to the new map size in v70.");
+            ZoomLevels.Value = DEFAULT_ZOOM_LEVELS;
+        }
+
+        LastConfigVersion.Value = MOD_VERSION;
     }
 
     public static void BeforeCameraRendering(ScriptableRenderContext context, Camera camera)
@@ -108,13 +130,13 @@ public class Plugin : BaseUnityPlugin
 
         ManualCameraRenderer currentMapRenderer = null;
 
-        mainMapRenderer.mapCameraLight.enabled = false;
+        mainMapRenderer.lineFromRadarTargetToExit.forceRenderingOff = true;
         if (camera == mainMapRenderer.cam)
             currentMapRenderer = mainMapRenderer;
 
         if (TerminalMapRenderer != null)
         {
-            TerminalMapRenderer.mapCameraLight.enabled = false;
+            TerminalMapRenderer.lineFromRadarTargetToExit.forceRenderingOff = true;
 
             if (camera == TerminalMapRenderer.cam)
                 currentMapRenderer = TerminalMapRenderer;
@@ -123,8 +145,33 @@ public class Plugin : BaseUnityPlugin
         if (currentMapRenderer == null)
             return;
 
-        // Enable the night vision light only for this camera.
-        currentMapRenderer.mapCameraLight.enabled = true;
+        // Enable the line to the exit only for this camera.
+        currentMapRenderer.lineFromRadarTargetToExit.forceRenderingOff = false;
+
+        SetContourMapVisibility(currentMapRenderer);
+    }
+
+    private static void SetContourMapVisibility(ManualCameraRenderer map)
+    {
+        // The contour map is shared between all maps. Make it visible only if this particular camera wants to see it.
+        // This logic is borrowed from ManualCameraRenderer.Update() within an if (cam == mapCamera) check.
+        var contourMap = map.contourMap;
+        if (contourMap == null)
+            return;
+
+        if (map.targetedPlayer == null && map.headMountedCamTarget.transform.position.y >= -80)
+            {
+                map.contourMap.SetActive(false);
+                return;
+            }
+        if (map.targetedPlayer != null && map.targetedPlayer.isInsideFactory)
+        {
+            map.contourMap.SetActive(false);
+            return;
+        }
+
+        map.contourMap.SetActive(value: true);
+        map.contourMap.transform.position = new Vector3(contourMap.transform.position.x, map.headMountedCamTarget.transform.position.y - 1.5f, contourMap.transform.position.z);
     }
 
     private static bool TargetIsValid(Transform targetTransform)
