@@ -160,18 +160,18 @@ public class Plugin : BaseUnityPlugin
             return;
 
         if (map.targetedPlayer == null && map.headMountedCamTarget.transform.position.y >= -80)
-            {
-                map.contourMap.SetActive(false);
-                return;
-            }
+        {
+            contourMap.SetActive(false);
+            return;
+        }
         if (map.targetedPlayer != null && map.targetedPlayer.isInsideFactory)
         {
-            map.contourMap.SetActive(false);
+            contourMap.SetActive(false);
             return;
         }
 
-        map.contourMap.SetActive(value: true);
-        map.contourMap.transform.position = new Vector3(contourMap.transform.position.x, map.headMountedCamTarget.transform.position.y - 1.5f, contourMap.transform.position.z);
+        contourMap.SetActive(value: true);
+        contourMap.transform.position = new Vector3(contourMap.transform.position.x, map.headMountedCamTarget.transform.position.y - 1.5f, contourMap.transform.position.z);
     }
 
     private static bool TargetIsValid(Transform targetTransform)
