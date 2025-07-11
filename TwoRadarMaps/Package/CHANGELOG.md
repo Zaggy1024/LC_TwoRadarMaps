@@ -1,3 +1,7 @@
+## Version 1.6.1
+- Fixed the contour map not displaying on the terminal when the main map's target is inside the interior before the terminal displays its map.
+- Fixed radar boosters not displaying the contour map.
+
 ## Version 1.6.0
 - Updated to support v70, with its head mounted cams and exit path lines.
 
