@@ -155,7 +155,7 @@ public class Plugin : BaseUnityPlugin
     {
         // The contour map is shared between all maps. Make it visible only if this particular camera wants to see it.
         // This logic is borrowed from ManualCameraRenderer.Update() within an if (cam == mapCamera) check.
-        var contourMap = map.contourMap;
+        var contourMap = StartOfRound.Instance.mapScreen.contourMap;
         if (contourMap == null)
             return;
 
