@@ -159,7 +159,7 @@ public class Plugin : BaseUnityPlugin
         if (contourMap == null)
             return;
 
-        if (map.targetedPlayer == null && map.headMountedCamTarget.transform.position.y >= -80)
+        if (map.targetedPlayer == null && map.headMountedCamTarget.transform.position.y <= -80)
         {
             contourMap.SetActive(false);
             return;
