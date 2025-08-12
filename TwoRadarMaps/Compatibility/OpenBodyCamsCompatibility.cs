@@ -1,4 +1,4 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 
 using BepInEx.Bootstrap;
 using UnityEngine;
@@ -62,7 +62,7 @@ internal static class OpenBodyCamsCompatibility
         SetBodyCamTexture(terminalBodyCam.GetCamera().targetTexture);
 
         ShipObjects.MainBodyCam.OnBlankedSet -= OpenBodyCams.TerminalCommands.SetBodyCamBlanked;
-        terminalBodyCam.OnBlankedSet += SetBodyCamBlanked;
+        terminalBodyCam.OnBlankedSet += OpenBodyCams.TerminalCommands.SetBodyCamBlanked;
 
         UpdateTerminalBodyCamSettings();
         Plugin.BodyCamHorizontalResolution.SettingChanged += (_, _) => UpdateTerminalBodyCamSettings();
@@ -102,10 +102,5 @@ internal static class OpenBodyCamsCompatibility
     {
         texture.filterMode = Plugin.TextureFiltering.Value;
         OpenBodyCams.TerminalCommands.PiPImage.texture = texture;
-    }
-
-    private static void SetBodyCamBlanked(bool blanked)
-    {
-        OpenBodyCams.TerminalCommands.PiPImage.color = blanked ? Color.black : Color.white;
     }
 }
