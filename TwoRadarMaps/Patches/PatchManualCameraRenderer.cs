@@ -208,13 +208,14 @@ internal static class PatchManualCameraRenderer
     }
 
     [HarmonyPatch(nameof(ManualCameraRenderer.MeetsCameraEnabledConditions))]
-    [HarmonyPrefix]
-    private static bool MeetsCameraEnabledConditionsPrefix(ManualCameraRenderer __instance, ref bool __result)
+    [HarmonyPostfix]
+    private static void MeetsCameraEnabledConditionsPostfix(ManualCameraRenderer __instance, ref bool __result)
     {
         if (__instance != Plugin.TerminalMapRenderer)
-            return true;
+            return;
+        if (!__result)
+            return;
         var image = Plugin.Terminal.terminalImage;
         __result = image.isActiveAndEnabled && image.texture == __instance.cam.targetTexture;
-        return false;
     }
 }
