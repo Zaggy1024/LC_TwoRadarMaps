@@ -12,18 +12,6 @@ namespace TwoRadarMaps.Patches
     [HarmonyPatch(typeof(ShipTeleporter))]
     internal static class PatchShipTeleporter
     {
-        public static readonly MethodInfo m_NetworkManager_get_IsListening = typeof(NetworkManager).GetMethod($"get_{nameof(NetworkManager.IsListening)}");
-
-        public static readonly MethodInfo m_WriteCurrentTarget = typeof(PatchShipTeleporter).GetMethod(nameof(WriteCurrentTargetIndex), BindingFlags.NonPublic | BindingFlags.Static, [typeof(FastBufferWriter)]);
-        public static readonly MethodInfo m_ReadTargetIndexAndSet = typeof(PatchShipTeleporter).GetMethod(nameof(ReadTargetIndexAndSet), BindingFlags.NonPublic | BindingFlags.Static, [typeof(FastBufferReader)]);
-
-        public static readonly MethodInfo m_Plugin_SetTargetIndex = typeof(Plugin).GetMethod(nameof(Plugin.SetTargetIndex), BindingFlags.NonPublic | BindingFlags.Static, [typeof(ManualCameraRenderer), typeof(int)]);
-
-        public static readonly MethodInfo m_ShipTeleporter_PressTeleportButtonServerRpcHandler = typeof(ShipTeleporter).GetMethod(nameof(ShipTeleporter.__rpc_handler_389447712), BindingFlags.NonPublic | BindingFlags.Static, [typeof(NetworkBehaviour), typeof(FastBufferReader), typeof(__RpcParams)]);
-        public static readonly MethodInfo m_ShipTeleporter_PressTeleportButtonClientRpc = typeof(ShipTeleporter).GetMethod(nameof(ShipTeleporter.PressTeleportButtonClientRpc), []);
-
-        private static readonly MethodInfo m_TranspileRPCReceiveHAndlerToSetTarget = typeof(PatchShipTeleporter).GetMethod(nameof(TranspileRPCReceiveHandlerToSetTarget), BindingFlags.NonPublic | BindingFlags.Static, [typeof(IEnumerable<CodeInstruction>), typeof(ILGenerator), typeof(MethodBase)]);
-
         private static readonly List<uint> rpcMessageIDs = new(2);
 
         [HarmonyPostfix]
@@ -72,7 +60,7 @@ namespace TwoRadarMaps.Patches
             injector
                 .Insert([
                     storeWriter.StlocToLdloc(),
-                    new CodeInstruction(OpCodes.Call, m_WriteCurrentTarget),
+                    new CodeInstruction(OpCodes.Call, typeof(PatchShipTeleporter).GetMethod(nameof(WriteCurrentTargetIndex), BindingFlags.NonPublic | BindingFlags.Static)),
                 ]);
             rpcMessageIDs.Add((uint)messageID);
             return injector.ReleaseInstructions();
@@ -127,7 +115,7 @@ namespace TwoRadarMaps.Patches
             var injector = new ILInjector(instructions)
                 .Find([
                     ILMatcher.Ldloc(),
-                    ILMatcher.Callvirt(m_NetworkManager_get_IsListening),
+                    ILMatcher.Callvirt(typeof(NetworkManager).GetProperty(nameof(NetworkManager.IsListening)).GetMethod),
                     ILMatcher.Opcode(OpCodes.Brtrue).CaptureOperandAs(out Label isListeningLabel),
                 ])
                 .FindLabel(isListeningLabel);
@@ -142,7 +130,7 @@ namespace TwoRadarMaps.Patches
             injector
                 .InsertAfterBranch([
                     new(OpCodes.Ldarg_1),
-                    new(OpCodes.Call, m_ReadTargetIndexAndSet),
+                    new(OpCodes.Call, typeof(PatchShipTeleporter).GetMethod(nameof(ReadTargetIndexAndSet), BindingFlags.NonPublic | BindingFlags.Static)),
                     new(OpCodes.Stloc, originalIndexLocal),
                 ])
                 .Find([
@@ -160,7 +148,7 @@ namespace TwoRadarMaps.Patches
                     new(OpCodes.Call, Reflection.m_StartOfRound_Instance),
                     new(OpCodes.Ldfld, Reflection.f_StartOfRound_mapScreen),
                     new(OpCodes.Ldloc, originalIndexLocal),
-                    new(OpCodes.Call, m_Plugin_SetTargetIndex),
+                    new(OpCodes.Call, typeof(Plugin).GetMethod(nameof(Plugin.SetTargetIndex), BindingFlags.NonPublic | BindingFlags.Static)),
                 ])
                 .ReleaseInstructions();
         }
