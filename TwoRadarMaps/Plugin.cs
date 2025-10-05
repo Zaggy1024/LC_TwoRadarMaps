@@ -97,7 +97,7 @@ public class Plugin : BaseUnityPlugin
         Harmony.PatchAll(typeof(PatchTerminal));
         Harmony.PatchAll(typeof(PatchVanillaBugs));
         Harmony.PatchAll(typeof(PatchManualCameraRenderer));
-        Harmony.PatchAll(typeof(PatchShipTeleporter));
+        PatchShipTeleporter.Apply();
 
         // Enable each map's line to the main exit only when rendering that map camera.
         RenderPipelineManager.beginCameraRendering += BeforeCameraRendering;

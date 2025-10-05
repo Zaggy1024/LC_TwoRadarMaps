@@ -14,6 +14,37 @@ namespace TwoRadarMaps.Patches
     {
         private static readonly List<uint> rpcMessageIDs = new(2);
 
+        internal static void Apply()
+        {
+            Plugin.Harmony.PatchAll(typeof(PatchShipTeleporter));
+
+            var initializeRpcs = typeof(ShipTeleporter).GetMethod("__initializeRpcs", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?? typeof(ShipTeleporter).GetMethod("InitializeRPCS_ShipTeleporter", BindingFlags.NonPublic | BindingFlags.Static);
+
+            Plugin.Harmony
+                .CreateProcessor(initializeRpcs)
+                .AddPostfix(typeof(PatchShipTeleporter).GetMethod(nameof(PatchRPCReceiveHandlers), BindingFlags.NonPublic | BindingFlags.Static))
+                .Patch();
+        }
+
+        private static void PatchRPCReceiveHandlers()
+        {
+            var m_TranspileRPCReceiveHandlerToSetTarget = typeof(PatchShipTeleporter).GetMethod(nameof(TranspileRPCReceiveHandlerToSetTarget), BindingFlags.NonPublic | BindingFlags.Static);
+
+            foreach (var rpcMessageID in rpcMessageIDs)
+            {
+                if (!NetworkManager.__rpc_func_table.TryGetValue(rpcMessageID, out var rpcDelegate))
+                {
+                    Plugin.Instance.Logger.LogError($"Failed to find RPC message handler with ID {rpcMessageID}.");
+                    Plugin.Instance.Logger.LogError("This may cause errors when using the ship teleporter.");
+                    continue;
+                }
+                Plugin.Harmony.CreateProcessor(rpcDelegate.GetMethodInfo())
+                    .AddTranspiler(m_TranspileRPCReceiveHandlerToSetTarget)
+                    .Patch();
+            }
+        }
+
         [HarmonyPostfix]
         [HarmonyPatch(nameof(ShipTeleporter.OnEnable))]
         private static void OnEnablePostfix(ShipTeleporter __instance)
@@ -66,32 +97,9 @@ namespace TwoRadarMaps.Patches
             return injector.ReleaseInstructions();
         }
 
-        [HarmonyPostfix]
-        [HarmonyPatch(nameof(ShipTeleporter.InitializeRPCS_ShipTeleporter))]
-        private static void InitializeRPCS_ShipTeleporterPostfix()
-        {
-            PatchRPCReceiveHandlers(Plugin.Harmony);
-        }
-
         private static void WriteCurrentTargetIndex(FastBufferWriter writer)
         {
             writer.WriteValue(StartOfRound.Instance.mapScreen.targetTransformIndex);
-        }
-
-        private static void PatchRPCReceiveHandlers(Harmony harmony)
-        {
-            foreach (var rpcMessageID in rpcMessageIDs)
-            {
-                if (!NetworkManager.__rpc_func_table.TryGetValue(rpcMessageID, out var rpcDelegate))
-                {
-                    Plugin.Instance.Logger.LogError($"Failed to find RPC message handler with ID {rpcMessageID}.");
-                    Plugin.Instance.Logger.LogError("This may cause errors when using the ship teleporter.");
-                    continue;
-                }
-                harmony.CreateProcessor(rpcDelegate.GetMethodInfo())
-                    .AddTranspiler(m_TranspileRPCReceiveHAndlerToSetTarget)
-                    .Patch();
-            }
         }
 
         private static int ReadTargetIndexAndSet(FastBufferReader reader)
