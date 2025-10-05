@@ -1,3 +1,6 @@
+## Version 1.6.3
+- Updated for compatibility with v73 and Unity 2022.3.62f2. This version remains compatible with v72.
+
 ## Version 1.6.2
 - Fixed the terminal map's signal lost UI not displaying when players enter caves.
 
