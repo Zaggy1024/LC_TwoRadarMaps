@@ -103,7 +103,7 @@ public class Plugin : BaseUnityPlugin
         RenderPipelineManager.beginCameraRendering += BeforeCameraRendering;
 
         OpenBodyCamsCompatibility.Initialize();
-        EnhancedRadarBoosterCompatibility.Initialize(Harmony);
+        EnhancedRadarBoosterCompatibility.Initialize();
     }
 
     private void MigrateConfigOptions()

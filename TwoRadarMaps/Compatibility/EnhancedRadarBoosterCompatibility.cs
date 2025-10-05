@@ -23,7 +23,7 @@ internal static class EnhancedRadarBoosterCompatibility
     private static MethodInfo m_MapCameraFocusOnPositionPostfixTranspiler;
     private static MethodInfo m_Camera_set_orthographicSize;
 
-    internal static void Initialize(Harmony harmony)
+    internal static void Initialize()
     {
         m_MapCameraFocusOnPositionPostfixTranspiler = typeof(EnhancedRadarBoosterCompatibility).GetMethod(nameof(MapCameraFocusOnPositionPostfixTranspiler), BindingFlags.NonPublic | BindingFlags.Static, [typeof(IEnumerable<CodeInstruction>), typeof(ILGenerator), typeof(MethodBase)]);
 
@@ -37,10 +37,10 @@ internal static class EnhancedRadarBoosterCompatibility
         m_Camera_set_orthographicSize = typeof(Camera).GetMethod($"set_{nameof(Camera.orthographicSize)}");
 
         if (Chainloader.PluginInfos.ContainsKey(ENHANCED_RADAR_BOOSTER_MOD_ID))
-            InitializeForEnhancedRadarBooster(harmony);
+            InitializeForEnhancedRadarBooster(Plugin.Harmony);
 
         if (Chainloader.PluginInfos.ContainsKey(IMMERSIVE_COMPANY_MOD_ID))
-            InitializeForImmersiveCompany(harmony);
+            InitializeForImmersiveCompany(Plugin.Harmony);
     }
 
     private static bool patchAppliedSuccessfully = false;
