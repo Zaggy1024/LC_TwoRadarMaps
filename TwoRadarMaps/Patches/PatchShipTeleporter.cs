@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 
 using HarmonyLib;
 using Unity.Netcode;
@@ -14,17 +16,49 @@ namespace TwoRadarMaps.Patches
     {
         private static readonly List<uint> rpcMessageIDs = new(2);
 
+        private static bool useOldRPCHandlerTable = false;
+
         internal static void Apply()
         {
             Plugin.Harmony.PatchAll(typeof(PatchShipTeleporter));
 
-            var initializeRpcs = typeof(ShipTeleporter).GetMethod("__initializeRpcs", BindingFlags.NonPublic | BindingFlags.Instance)
-                ?? typeof(ShipTeleporter).GetMethod("InitializeRPCS_ShipTeleporter", BindingFlags.NonPublic | BindingFlags.Static);
+            var initializeRpcs = typeof(ShipTeleporter).GetMethod("__initializeRpcs", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            if (initializeRpcs == null)
+            {
+                initializeRpcs = typeof(ShipTeleporter).GetMethod("InitializeRPCS_ShipTeleporter", BindingFlags.NonPublic | BindingFlags.Static);
+                useOldRPCHandlerTable = true;
+            }
 
             Plugin.Harmony
                 .CreateProcessor(initializeRpcs)
                 .AddPostfix(typeof(PatchShipTeleporter).GetMethod(nameof(PatchRPCReceiveHandlers), BindingFlags.NonPublic | BindingFlags.Static))
                 .Patch();
+        }
+
+        private static bool TryGetRPCHandler(Type type, uint hash, out Delegate handler)
+        {
+            if (useOldRPCHandlerTable)
+            {
+                handler = null;
+                if (!NetworkManager.__rpc_func_table.TryGetValue(hash, out var oldHandler))
+                    return false;
+                handler = oldHandler;
+                return true;
+            }
+            return TryGetRPCHandlerNew(type, hash, out handler);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static bool TryGetRPCHandlerNew(Type type, uint hash, out Delegate handler)
+        {
+            handler = null;
+            if (!NetworkBehaviour.__rpc_func_table.TryGetValue(type, out var handlers))
+                return false;
+            if (!handlers.TryGetValue(hash, out var oldHandler))
+                return false;
+            handler = oldHandler;
+            return true;
         }
 
         private static void PatchRPCReceiveHandlers()
@@ -33,7 +67,7 @@ namespace TwoRadarMaps.Patches
 
             foreach (var rpcMessageID in rpcMessageIDs)
             {
-                if (!NetworkManager.__rpc_func_table.TryGetValue(rpcMessageID, out var rpcDelegate))
+                if (!TryGetRPCHandler(typeof(ShipTeleporter), rpcMessageID, out var rpcDelegate))
                 {
                     Plugin.Instance.Logger.LogError($"Failed to find RPC message handler with ID {rpcMessageID}.");
                     Plugin.Instance.Logger.LogError("This may cause errors when using the ship teleporter.");
