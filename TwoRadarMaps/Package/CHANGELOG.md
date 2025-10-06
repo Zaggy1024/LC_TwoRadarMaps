@@ -1,3 +1,6 @@
+## Version 1.6.4
+- Fixed the `tp` command targetting the main monitor's target player instead of the terminal map's in v73.
+
 ## Version 1.6.3
 - Updated for compatibility with v73 and Unity 2022.3.62f2. This version remains compatible with v72.
 
