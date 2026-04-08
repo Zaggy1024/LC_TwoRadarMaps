@@ -4,6 +4,7 @@ using System.Linq;
 using HarmonyLib;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Rendering.HighDefinition;
 using UnityEngine.UI;
 
 using TwoRadarMaps.Utilities.IL;
@@ -88,7 +89,8 @@ internal static class PatchTerminal
 
         var terminalMapShipArrowUI = terminalMapScreenUI.transform.Find(mainMapRenderer.shipArrowUI.name)?.gameObject;
         var terminalMapShipArrowPointer = terminalMapShipArrowUI.transform.Find(mainMapRenderer.shipArrowPointer.name);
-        if (terminalMapShipArrowUI == null || terminalMapShipArrowPointer == null)
+        var terminalMapShipIcon = terminalMapScreenUI.transform.Find(mainMapRenderer.shipIcon.name)?.gameObject;
+        if (terminalMapShipArrowUI == null || terminalMapShipArrowPointer == null || terminalMapShipIcon == null)
         {
             Plugin.Instance.Logger.LogError("Failed to get cloned ship arrow pointer.");
             return;
@@ -184,10 +186,12 @@ internal static class PatchTerminal
         // Our terminal map will enable and disable the arrow UI when it is active.
         terminalMapRenderer.shipArrowUI = terminalMapShipArrowUI;
         terminalMapRenderer.shipArrowPointer = terminalMapShipArrowPointer;
+        terminalMapRenderer.shipIcon = terminalMapShipIcon;
         terminalMapRenderer.compassRose = terminalMapCompass;
 
         // Head mounted cam setup:
         terminalMapRenderer.headMountedCam = terminalMapHeadMountedCam;
+        terminalMapRenderer.headMountedCamData = terminalMapHeadMountedCam.GetComponent<HDAdditionalCameraData>();
         terminalMapRenderer.headMountedCamPositionOffset = mainMapRenderer.headMountedCamPositionOffset;
         terminalMapRenderer.headMountedCamRotationOffset = mainMapRenderer.headMountedCamRotationOffset;
         terminalMapRenderer.headMountedCamUI = terminalMapHeadMountedCamUI;

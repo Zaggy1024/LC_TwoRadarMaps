@@ -55,29 +55,13 @@ public static class TerminalCommands
 
             var inKeyword = FindOrCreateKeyword("In", "in", false);
             var outKeyword = FindOrCreateKeyword("Out", "out", false);
-            var zoomVerbKeyword = FindOrCreateKeyword("Zoom", "zoom", true,
-                [
-                    new CompatibleNoun()
-                    {
-                        noun = inKeyword,
-                        result = ZoomInNode,
-                    },
-                    new CompatibleNoun()
-                    {
-                        noun = outKeyword,
-                        result = ZoomOutNode,
-                    },
-                ]);
+            var zoomVerbKeyword = FindOrCreateKeyword("Zoom", "zoom", true, [ new CompatibleNoun(inKeyword, ZoomInNode), new CompatibleNoun(outKeyword, ZoomOutNode) ]);
             zoomVerbKeyword.specialKeywordResult = CycleZoomNode;
 
             var zoomNounKeyword = FindOrCreateKeyword("Zoom", "zoom", false);
             FindOrCreateKeyword("Reset", "reset", true,
                 [
-                    new CompatibleNoun()
-                    {
-                        noun = zoomNounKeyword,
-                        result = ResetZoomNode,
-                    },
+                    new CompatibleNoun(zoomNounKeyword, ResetZoomNode),
                 ]);
 
             AddCommandDescription("other", "ZOOM", "Cycle through zoom levels on the map. Specify direction with 'IN' and 'OUT'.\n" +
@@ -93,14 +77,7 @@ public static class TerminalCommands
             TeleportNode.clearPreviousText = true;
 
             var teleporterNounKeyword = FindOrCreateKeyword("Teleporter", "teleporter", false);
-            FindOrCreateKeyword("Activate", "activate", true,
-                [
-                    new CompatibleNoun()
-                    {
-                        noun = teleporterNounKeyword,
-                        result = TeleportNode,
-                    }
-                ]);
+            FindOrCreateKeyword("Activate", "activate", true, [ new CompatibleNoun(teleporterNounKeyword, TeleportNode) ]);
 
             var shorthandAppend = "";
 
