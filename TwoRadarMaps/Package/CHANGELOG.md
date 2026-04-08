@@ -1,3 +1,6 @@
+## Version 1.6.5
+- Updated for compatibility with v81. This will not be compatible with prior versions.
+
 ## Version 1.6.4
 - Fixed the `tp` command targetting the main monitor's target player instead of the terminal map's in v73.
 
